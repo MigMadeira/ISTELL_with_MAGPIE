@@ -40,7 +40,7 @@ s_plot = SurfaceRZFourier.from_wout(
 )
 
 # Make the output directory
-OUT_DIR = 'ISTELL_polarization_study/face_corner/'
+OUT_DIR = 'ISTELL_polarization_study/all_polarizations/'
 os.makedirs(OUT_DIR, exist_ok=True)
 
 #setting radius for the circular coils
@@ -109,13 +109,14 @@ pol_type = np.concatenate((pol_type, pol_type_f))
 
 # Optionally add additional types of allowed orientations
 PM4Stell_orientations = True
+full_orientations = True
 if PM4Stell_orientations:
-    #pol_axes_fe_ftri, pol_type_fe_ftri = polarization_axes(['fe_ftri'])
-    #ntype_fe_ftri = int(len(pol_type_fe_ftri)/2)
-    #pol_axes_fe_ftri = pol_axes_fe_ftri[:ntype_fe_ftri, :]
-    #pol_type_fe_ftri = pol_type_fe_ftri[:ntype_fe_ftri] + 1
-    #pol_axes = np.concatenate((pol_axes, pol_axes_fe_ftri), axis=0)
-    #pol_type = np.concatenate((pol_type, pol_type_fe_ftri))
+    pol_axes_fe_ftri, pol_type_fe_ftri = polarization_axes(['fe_ftri'])
+    ntype_fe_ftri = int(len(pol_type_fe_ftri)/2)
+    pol_axes_fe_ftri = pol_axes_fe_ftri[:ntype_fe_ftri, :]
+    pol_type_fe_ftri = pol_type_fe_ftri[:ntype_fe_ftri] + 1
+    pol_axes = np.concatenate((pol_axes, pol_axes_fe_ftri), axis=0)
+    pol_type = np.concatenate((pol_type, pol_type_fe_ftri))
 
     pol_axes_fc_ftri, pol_type_fc_ftri = polarization_axes(['fc_ftri'])
     ntype_fc_ftri = int(len(pol_type_fc_ftri)/2)
@@ -123,6 +124,23 @@ if PM4Stell_orientations:
     pol_type_fc_ftri = pol_type_fc_ftri[:ntype_fc_ftri] + 2
     pol_axes = np.concatenate((pol_axes, pol_axes_fc_ftri), axis=0)
     pol_type = np.concatenate((pol_type, pol_type_fc_ftri))
+    
+    if full_orientations:
+        pol_axes_corner, pol_type_corner = polarization_axes(['corner'])
+        ntype_corner = int(len(pol_type_corner)/2)
+        pol_axes_corner = pol_axes_corner[:ntype_corner, :]
+        pol_type_corner = pol_type_corner[:ntype_corner] + 1
+        pol_axes = np.concatenate((pol_axes, pol_axes_corner), axis=0)
+        pol_type = np.concatenate((pol_type, pol_type_corner))
+        
+        pol_axes_edge, pol_type_edge = polarization_axes(['edge'])
+        ntype_edge = int(len(pol_type_edge)/2)
+        pol_axes_edge = pol_axes_edge[:ntype_edge, :]
+        pol_type_edge = pol_type_edge[:ntype_edge] + 1
+        pol_axes = np.concatenate((pol_axes, pol_axes_edge), axis=0)
+        pol_type = np.concatenate((pol_type, pol_type_edge))
+        
+
 
 #setup the polarization vectors from the magnet data in the focus file
 ophi = np.arctan2(mag_data.oy, mag_data.ox) 
@@ -243,9 +261,9 @@ if save_plots:
         Bnormal_total = Bnormal + Bnormal_dipoles
 
         # For plotting Bn on the full torus surface at the end with just the dipole fields
-        make_Bnormal_plots(b_dipole, s_plot, OUT_DIR, "only_m_optimized_K{K_save}_nphi{nphi}_ntheta{ntheta}")
+        make_Bnormal_plots(b_dipole, s_plot, OUT_DIR, f"only_m_optimized_K{K_save}_nphi{nphi}_ntheta{ntheta}")
         pointData = {"B_N": Bnormal_total[:, :, None]}
-        s_plot.to_vtk(OUT_DIR + "m_optimized_K{K_save}_nphi{nphi}_ntheta{ntheta}", extra_data=pointData)
+        s_plot.to_vtk(OUT_DIR + f"m_optimized_K{K_save}_nphi{nphi}_ntheta{ntheta}", extra_data=pointData)
 
     # write solution to FAMUS-type file
     #pm_opt.write_to_famus(Path(OUT_DIR))
