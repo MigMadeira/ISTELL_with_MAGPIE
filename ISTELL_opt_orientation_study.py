@@ -167,12 +167,12 @@ print('Number of available dipoles = ', pm_opt.ndipoles)
 # Set some hyperparameters for the optimization
 algorithm = 'ArbVec'  # Algorithm to use
 nAdjacent = 1  # How many magnets to consider "adjacent" to one another
-nHistory = 295 # How often to save the algorithm progress
+nHistory = 500 # How often to save the algorithm progress
 thresh_angle = np.pi # The angle between two "adjacent" dipoles such that they should be removed
-max_nMagnets = 5900
+max_nMagnets = 52500
 nBacktracking = 200
 kwargs = initialize_default_kwargs('GPMO')
-kwargs['K'] = 5900 # Maximum number of GPMO iterations to run
+kwargs['K'] = 52500 # Maximum number of GPMO iterations to run
 kwargs['nhistory'] = nHistory
 if algorithm == 'backtracking' or algorithm == 'ArbVec_backtracking':
     kwargs['backtracking'] = nBacktracking  # How often to perform the backtrackinig
@@ -237,6 +237,11 @@ if save_plots:
         OUT_DIR + f"R2history_K{max_nMagnets}_nphi{nphi}_ntheta{ntheta}.txt",
         R2_history
     )
+    mu0 = 4 * np.pi * 1e-7
+    Bmax = 1.465
+    vol_eff = np.sum(np.sqrt(np.sum(m_history ** 2, axis=1)), axis=0) * mu0 * 2 * s.nfp / Bmax
+    np.savetxt(OUT_DIR + 'eff_vol_history_K' + str(max_nMagnets) + '_nphi' + str(nphi) + '_ntheta' + str(ntheta) + '.txt', vol_eff)
+    
     # Plot the SIMSOPT GPMO solution
     bs.set_points(s_plot.gamma().reshape((-1, 3)))
     Bnormal = np.sum(bs.B().reshape((qphi, ntheta, 3)) * s_plot.unitnormal(), axis=2)
