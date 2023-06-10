@@ -23,7 +23,7 @@ ntheta = 64 # same as above
 surface_flag = 'wout'
 input_name = 'wout_ISTTOK_final.nc'
 coordinate_flag = 'cartesian'
-famus_filename = 'grids/ISTELL_1cm_cubes_nospacing.focus'
+famus_filename = 'grids/ISTELL_1cm_cubes_nodiagnostics_v3.focus'
 
 # Read in the plasma equilibrium file
 TEST_DIR = Path(__file__).parent
@@ -40,7 +40,7 @@ s_plot = SurfaceRZFourier.from_wout(
 )
 
 # Make the output directory
-OUT_DIR = 'ISTELL_polarization_study/all_polarizations/'
+OUT_DIR = 'ISTELL_with_spacing/PM4STELL/'
 os.makedirs(OUT_DIR, exist_ok=True)
 
 #setting radius for the circular coils
@@ -109,7 +109,7 @@ pol_type = np.concatenate((pol_type, pol_type_f))
 
 # Optionally add additional types of allowed orientations
 PM4Stell_orientations = True
-full_orientations = True
+full_orientations = False
 if PM4Stell_orientations:
     pol_axes_fe_ftri, pol_type_fe_ftri = polarization_axes(['fe_ftri'])
     ntype_fe_ftri = int(len(pol_type_fe_ftri)/2)
@@ -165,14 +165,14 @@ pm_opt = PermanentMagnetGrid.geo_setup_from_famus(s, Bnormal, famus_filename, po
 print('Number of available dipoles = ', pm_opt.ndipoles)
 
 # Set some hyperparameters for the optimization
-algorithm = 'ArbVec_backtracking'  # Algorithm to use
+algorithm = 'ArbVec'  # Algorithm to use
 nAdjacent = 1  # How many magnets to consider "adjacent" to one another
-nHistory = 620 # How often to save the algorithm progress
-thresh_angle = np.pi*0.99  # The angle between two "adjacent" dipoles such that they should be removed
-max_nMagnets = 8060
+nHistory = 295 # How often to save the algorithm progress
+thresh_angle = np.pi # The angle between two "adjacent" dipoles such that they should be removed
+max_nMagnets = 5900
 nBacktracking = 200
 kwargs = initialize_default_kwargs('GPMO')
-kwargs['K'] = 20000 # Maximum number of GPMO iterations to run
+kwargs['K'] = 5900 # Maximum number of GPMO iterations to run
 kwargs['nhistory'] = nHistory
 if algorithm == 'backtracking' or algorithm == 'ArbVec_backtracking':
     kwargs['backtracking'] = nBacktracking  # How often to perform the backtrackinig
@@ -189,7 +189,7 @@ t2 = time.time()
 print('GPMO took t = ', t2 - t1, ' s')
 
 # plot the MSE history
-iterations = np.linspace(0, kwargs['max_nMagnets'], len(R2_history), endpoint=False)
+iterations = np.linspace(0, max_nMagnets, len(R2_history), endpoint=False)
 plt.figure()
 plt.semilogy(iterations, R2_history, label=r'$f_B$')
 plt.semilogy(iterations, Bn_history, label=r'$<|Bn|>$')
@@ -203,11 +203,11 @@ plt.savefig(OUT_DIR + 'GPMO_MSE_history.png')
 min_ind = np.argmin(R2_history)
 pm_opt.m = np.ravel(m_history[:, :, min_ind])
 print("best result = ", 0.5 * np.sum((pm_opt.A_obj @ pm_opt.m - pm_opt.b_obj) ** 2))
-np.savetxt(OUT_DIR + 'best_result_m=' + str(int(kwargs['max_nMagnets'] / (kwargs['nhistory']) * min_ind )) + '.txt', m_history[:, :, min_ind ].reshape(pm_opt.ndipoles * 3))
+np.savetxt(OUT_DIR + 'best_result_m=' + str(int(max_nMagnets/ (kwargs['nhistory']) * min_ind )) + '.txt', m_history[:, :, min_ind ].reshape(pm_opt.ndipoles * 3))
 b_dipole = DipoleField(pm_opt.dipole_grid_xyz, m_history[:, :, min_ind ].reshape(pm_opt.ndipoles * 3),
                        nfp=s.nfp, coordinate_flag=pm_opt.coordinate_flag, m_maxima=pm_opt.m_maxima,)
 b_dipole.set_points(s_plot.gamma().reshape((-1, 3)))
-b_dipole._toVTK(OUT_DIR + "Dipole_Fields_K" + str(int(kwargs['max_nMagnets'] / (kwargs['nhistory']) * min_ind)))
+b_dipole._toVTK(OUT_DIR + "Dipole_Fields_K" + str(int(max_nMagnets / (kwargs['nhistory']) * min_ind)))
 bs.set_points(s_plot.gamma().reshape((-1, 3)))
 Bnormal = np.sum(bs.B().reshape((qphi, ntheta, 3)) * s_plot.unitnormal(), axis=2)
 Bnormal_dipoles = np.sum(b_dipole.B().reshape((qphi, ntheta, 3)) * s_plot.unitnormal(), axis=-1)
@@ -215,7 +215,7 @@ Bnormal_total = Bnormal + Bnormal_dipoles
 # For plotting Bn on the full torus surface at the end with just the dipole fields
 make_Bnormal_plots(b_dipole, s_plot, OUT_DIR, "only_m_optimized_K" + str(int(kwargs['K'] / (kwargs['nhistory']) * min_ind)))
 pointData = {"B_N": Bnormal_total[:, :, None]}
-s_plot.to_vtk(OUT_DIR + "m_optimized_K" + str(int(kwargs['max_nMagnets'] / (kwargs['nhistory']) * min_ind)), extra_data=pointData)
+s_plot.to_vtk(OUT_DIR + "m_optimized_K" + str(int(max_nMagnets / (kwargs['nhistory']) * min_ind)), extra_data=pointData)
     
 
 # Print effective permanent magnet volume
@@ -234,7 +234,7 @@ if save_plots:
     #    m_history.reshape(pm_opt.ndipoles * 3, kwargs['nhistory'] + 1)
     #)
     np.savetxt(
-        OUT_DIR + f"R2history_K{kwargs['max_nMagnets']}_nphi{nphi}_ntheta{ntheta}.txt",
+        OUT_DIR + f"R2history_K{max_nMagnets}_nphi{nphi}_ntheta{ntheta}.txt",
         R2_history
     )
     # Plot the SIMSOPT GPMO solution
@@ -245,7 +245,7 @@ if save_plots:
     # Look through the solutions as function of K and make plots
     for k in range(0, kwargs["nhistory"] + 1, 31):
         mk = m_history[:, :, k].reshape(pm_opt.ndipoles * 3)
-        np.savetxt(OUT_DIR + 'result_m=' + str(int(kwargs['max_nMagnets'] / (kwargs['nhistory']) * k)) + '.txt', m_history[:, :, k].reshape(pm_opt.ndipoles * 3))
+        np.savetxt(OUT_DIR + 'result_m=' + str(int(max_nMagnets / (kwargs['nhistory']) * k)) + '.txt', m_history[:, :, k].reshape(pm_opt.ndipoles * 3))
         b_dipole = DipoleField(
             pm_opt.dipole_grid_xyz,
             mk, 
@@ -254,7 +254,7 @@ if save_plots:
             m_maxima=pm_opt.m_maxima,
         )
         b_dipole.set_points(s_plot.gamma().reshape((-1, 3)))
-        K_save = int(kwargs['max_nMagnets'] / kwargs['nhistory'] * k)
+        K_save = int(max_nMagnets/ kwargs['nhistory'] * k)
         b_dipole._toVTK(OUT_DIR + f"Dipole_Fields_K{K_save}_nphi{nphi}_ntheta{ntheta}")
         print("Total fB = ", 0.5 * np.sum((pm_opt.A_obj @ mk - pm_opt.b_obj) ** 2))
         Bnormal_dipoles = np.sum(b_dipole.B().reshape((qphi, ntheta, 3)) * s_plot.unitnormal(), axis=-1)
