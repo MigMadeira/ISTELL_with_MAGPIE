@@ -4,12 +4,10 @@ from pathlib import Path
 import numpy as np
 from simsopt.geo import SurfaceRZFourier
 from simsopt.objectives import SquaredFlux
-from simsopt.field.magneticfieldclasses import DipoleField, ToroidalField
+from simsopt.field.magneticfieldclasses import DipoleField
 from simsopt.field.biotsavart import BiotSavart
-from simsopt.geo import PermanentMagnetGrid, create_equally_spaced_curves, curves_to_vtk
-from simsopt.field import Current, ScaledCurrent, coils_via_symmetries, compute_fieldlines
-from simsopt.solve import relax_and_split, GPMO 
-from simsopt._core import Optimizable
+from simsopt.geo import PermanentMagnetGrid
+from simsopt.field import compute_fieldlines
 import pickle
 import time
 from simsopt.util.permanent_magnet_helper_functions import *
@@ -17,7 +15,7 @@ from simsopt.mhd.vmec import Vmec
 from simsopt import load
 from math import sqrt,ceil
 from mpi4py import MPI
-from simsopt.util import MpiPartition
+from simsopt.util import MpiPartition, FocusData, discretize_polarizations, polarization_axes
 mpi = MpiPartition()
 comm = MPI.COMM_WORLD
 
@@ -25,9 +23,8 @@ comm = MPI.COMM_WORLD
 comm = None
 nphi = 64 # need to set this to 64 for a real run
 ntheta = 64 # same as above
-surface_flag = 'wout'
 input_name = 'wout_ISTTOK_final.nc'
-coordinate_flag = 'toroidal'
+coordinate_flag = 'cartesian'
 
 
 # Read in the plasma equilibrium file
@@ -48,13 +45,13 @@ s_plot = SurfaceRZFourier.from_wout(
 )
 
 # Make the output directory
-OUT_DIR = '../../../Transfer/'
+OUT_DIR = './Poincare_plots'
 #os.makedirs(OUT_DIR, exist_ok=True)
 
 # Files for the desired initial coils, magnet grid and magnetizations:
-coilfile = (Path(__file__).parent / "inputs" / "biot_savart_opt_ISTELL.json").resolve()
-famus_file = "../../tests/test_files/Poincare_inputs/ISTELL.focus"
-dipole_file = "../../../Transfer/best_result_m=21328.txt"
+coilfile = "./ISTELL_with_spacing/PM4STELL/biot_savart_opt.json"
+famus_filename = "./grids/ISTELL_1cm_cubes_nodiagnostics_v3.focus"
+dipole_file = "./ISTELL_with_spacing/PM4STELL/result_m=39060.txt"
 
 # Get the Biot Savart field from the coils:
 bs = load(coilfile)
@@ -66,14 +63,66 @@ bs = load(coilfile)
 bs.set_points(s.gamma().reshape((-1, 3)))
 Bnormal = np.sum(bs.B().reshape((nphi, ntheta, 3)) * s.unitnormal(), axis=2)
 
-# Initialize the permanent magnet class
-pm_opt = PermanentMagnetGrid(
-    s, Bn=Bnormal, 
-    filename=surface_filename,
-    coordinate_flag=coordinate_flag,
-    famus_filename=famus_file
-)
+#load focus file with the grid info
+mag_data = FocusData(famus_filename)
 
+# Determine the allowable polarization types and reject the negatives
+pol_axes = np.zeros((0, 3))
+pol_type = np.zeros(0, dtype=int)
+pol_axes_f, pol_type_f = polarization_axes(['face'])
+ntype_f = int(len(pol_type_f)/2)
+pol_axes_f = pol_axes_f[:ntype_f, :]
+pol_type_f = pol_type_f[:ntype_f]
+pol_axes = np.concatenate((pol_axes, pol_axes_f), axis=0)
+pol_type = np.concatenate((pol_type, pol_type_f))
+
+# Optionally add additional types of allowed orientations
+PM4Stell_orientations = True
+full_orientations = False
+if PM4Stell_orientations:
+    pol_axes_fe_ftri, pol_type_fe_ftri = polarization_axes(['fe_ftri'])
+    ntype_fe_ftri = int(len(pol_type_fe_ftri)/2)
+    pol_axes_fe_ftri = pol_axes_fe_ftri[:ntype_fe_ftri, :]
+    pol_type_fe_ftri = pol_type_fe_ftri[:ntype_fe_ftri] + 1
+    pol_axes = np.concatenate((pol_axes, pol_axes_fe_ftri), axis=0)
+    pol_type = np.concatenate((pol_type, pol_type_fe_ftri))
+
+    pol_axes_fc_ftri, pol_type_fc_ftri = polarization_axes(['fc_ftri'])
+    ntype_fc_ftri = int(len(pol_type_fc_ftri)/2)
+    pol_axes_fc_ftri = pol_axes_fc_ftri[:ntype_fc_ftri, :]
+    pol_type_fc_ftri = pol_type_fc_ftri[:ntype_fc_ftri] + 2
+    pol_axes = np.concatenate((pol_axes, pol_axes_fc_ftri), axis=0)
+    pol_type = np.concatenate((pol_type, pol_type_fc_ftri))
+    
+    if full_orientations:
+        pol_axes_corner, pol_type_corner = polarization_axes(['corner'])
+        ntype_corner = int(len(pol_type_corner)/2)
+        pol_axes_corner = pol_axes_corner[:ntype_corner, :]
+        pol_type_corner = pol_type_corner[:ntype_corner] + 1
+        pol_axes = np.concatenate((pol_axes, pol_axes_corner), axis=0)
+        pol_type = np.concatenate((pol_type, pol_type_corner))
+        
+        pol_axes_edge, pol_type_edge = polarization_axes(['edge'])
+        ntype_edge = int(len(pol_type_edge)/2)
+        pol_axes_edge = pol_axes_edge[:ntype_edge, :]
+        pol_type_edge = pol_type_edge[:ntype_edge] + 1
+        pol_axes = np.concatenate((pol_axes, pol_axes_edge), axis=0)
+        pol_type = np.concatenate((pol_type, pol_type_edge))
+        
+
+
+#setup the polarization vectors from the magnet data in the focus file
+ophi = np.arctan2(mag_data.oy, mag_data.ox) 
+discretize_polarizations(mag_data, ophi, pol_axes, pol_type)
+pol_vectors = np.zeros((mag_data.nMagnets, len(pol_type), 3))
+pol_vectors[:, :, 0] = mag_data.pol_x
+pol_vectors[:, :, 1] = mag_data.pol_y
+pol_vectors[:, :, 2] = mag_data.pol_z
+print('pol_vectors_shape = ', pol_vectors.shape)
+
+# Initialize the permanent magnet class
+pm_opt = PermanentMagnetGrid.geo_setup_from_famus(s, Bnormal, 
+                                                  famus_filename, pol_vectors=pol_vectors)
 
 # Get the Biot Savart field from the magnets:
 pm_opt.m = np.loadtxt(dipole_file)
@@ -170,4 +219,4 @@ for i in range(len(phis)):
 # plt.legend(bbox_to_anchor=(0.1, 0.9 ))
 leg = fig.legend(loc='upper center', bbox_to_anchor=(0.5, 1.05), ncol=4, fontsize=12)
 plt.tight_layout()
-plt.savefig(OUT_DIR + f'poincare_ISTELL_time=1000_tol=1e-16_best.pdf', bbox_inches = 'tight', pad_inches = 0)
+plt.savefig(OUT_DIR + f'poincare_ISTELL_PM4STELL_time={tmax_fl}_tol={tol_poincare}.pdf', bbox_inches = 'tight', pad_inches = 0)
