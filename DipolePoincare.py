@@ -28,7 +28,7 @@ coordinate_flag = 'cartesian'
 
 
 # Read in the plasma equilibrium file
-TEST_DIR = (Path(__file__).parent / ".." / ".." / "tests" / "test_files").resolve()
+TEST_DIR = (Path(__file__).parent).resolve()
 surface_filename = TEST_DIR / input_name
 s = SurfaceRZFourier.from_wout(surface_filename, range="half period", nphi=nphi, ntheta=ntheta)
 
@@ -45,8 +45,8 @@ s_plot = SurfaceRZFourier.from_wout(
 )
 
 # Make the output directory
-OUT_DIR = './Poincare_plots'
-#os.makedirs(OUT_DIR, exist_ok=True)
+OUT_DIR = './Poincare_plots/'
+os.makedirs(OUT_DIR, exist_ok=True)
 
 # Files for the desired initial coils, magnet grid and magnetizations:
 coilfile = "./ISTELL_with_spacing/PM4STELL/biot_savart_opt.json"
@@ -126,7 +126,8 @@ pm_opt = PermanentMagnetGrid.geo_setup_from_famus(s, Bnormal,
 
 # Get the Biot Savart field from the magnets:
 pm_opt.m = np.loadtxt(dipole_file)
-b_dipole = DipoleField(pm_opt)
+b_dipole = DipoleField(pm_opt.dipole_grid_xyz, pm_opt.m.reshape(pm_opt.ndipoles * 3),
+                       nfp=s.nfp, coordinate_flag=pm_opt.coordinate_flag, m_maxima=pm_opt.m_maxima)
 b_dipole.set_points(s_plot.gamma().reshape((-1, 3)))
 
 print("Total fB = ",
@@ -160,7 +161,7 @@ Z0 = Z_final[0,:,0]
 print("Finished VMEC")
 from simsopt.field import particles_to_vtk
 tmax_fl= 1000
-tol_poincare=1e-16
+tol_poincare=1e-14
 def trace_fieldlines(bfield, R0, Z0):
     t1 = time.time()
     phis = [(i/4)*(2*np.pi/nfp) for i in range(4)]
@@ -219,4 +220,6 @@ for i in range(len(phis)):
 # plt.legend(bbox_to_anchor=(0.1, 0.9 ))
 leg = fig.legend(loc='upper center', bbox_to_anchor=(0.5, 1.05), ncol=4, fontsize=12)
 plt.tight_layout()
+
 plt.savefig(OUT_DIR + f'poincare_ISTELL_PM4STELL_time={tmax_fl}_tol={tol_poincare}.pdf', bbox_inches = 'tight', pad_inches = 0)
+plt.savefig(OUT_DIR + f'poincare_ISTELL_PM4STELL_time={tmax_fl}_tol={tol_poincare}.png', bbox_inches = 'tight', pad_inches = 0)
