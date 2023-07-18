@@ -42,8 +42,8 @@ Bnormal = np.sum(bs.B().reshape((nphi, ntheta, 3)) * s.unitnormal(), axis=2)
 #create the outside boundary for the PMs (corresponds to the coil limit)
 s_remove = SurfaceRZFourier.from_nphi_ntheta(nphi = nphi, ntheta = ntheta, range='half period', nfp=2, stellsym=True)
 s_remove.set_rc( 0, 0, 0.52)
-s_remove.set_rc( 1, 0, 0.2025)
-s_remove.set_zs( 1, 0, 0.2025)
+s_remove.set_rc( 1, 0, 0.2025 - 0.005)
+s_remove.set_zs( 1, 0, 0.2025 - 0.005)
 s_remove.to_vtk(OUT_DIR + "surf_to_remove")
 
 # Initialize the permanent magnet class
