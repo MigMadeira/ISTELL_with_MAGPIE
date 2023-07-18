@@ -52,9 +52,9 @@ pm_opt = PermanentMagnetGrid.geo_setup_from_famus(s, Bnormal, famus_filename)
 #print the number of magnets and plot the magnet grid before removal
 print('Number of available dipoles = ', pm_opt.ndipoles)
 pm_opt.m = np.zeros(pm_opt.ndipoles*3)
-b_dipole = DipoleField(pm_opt.dipole_grid_xyz, pm_opt.m,
+b_dipole = DipoleField(pm_opt.dipole_grid_xyz[int(pm_opt.ndipoles/(s.nfp*2))], pm_opt.m[int(pm_opt.ndipoles/(s.nfp*2))],
                        nfp=s.nfp, coordinate_flag=pm_opt.coordinate_flag, m_maxima=pm_opt.m_maxima,)
-b_dipole._toVTK(OUT_DIR + "Dipole_Fields_K")
+b_dipole._toVTK(OUT_DIR + "Dipole_Fields_K_hfp")
 
 #remove magnets outside a given surface s_remove
 pm_opt.remove_magnets_inside_surface(s_remove)
@@ -62,9 +62,9 @@ pm_opt.remove_magnets_inside_surface(s_remove)
 #print the number of magnets and plot the magnet grid after removal
 pm_opt.m = np.zeros(pm_opt.ndipoles*3)
 print('Number of available dipoles = ', pm_opt.ndipoles)
-b_dipole = DipoleField(pm_opt.dipole_grid_xyz, pm_opt.m,
+b_dipole = DipoleField(pm_opt.dipole_grid_xyz[int(pm_opt.ndipoles/(s.nfp*2))], pm_opt.m[int(pm_opt.ndipoles/(s.nfp*2))],
                        nfp=s.nfp, coordinate_flag=pm_opt.coordinate_flag, m_maxima=pm_opt.m_maxima,)
-b_dipole._toVTK(OUT_DIR + "Dipole_Fields_K_after_torus_removal")
+b_dipole._toVTK(OUT_DIR + "Dipole_Fields_K_after_torus_removal_hfp")
 
 #write solution to FAMUS-type file
 pm_opt.write_to_famus(Path(OUT_DIR))
