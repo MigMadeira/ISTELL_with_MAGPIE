@@ -23,8 +23,13 @@ ntheta = 64 # same as above
 surface_flag = 'wout'
 input_name = 'wout_ISTTOK_final.nc'
 coordinate_flag = 'cartesian'
+<<<<<<< HEAD
 dr = 1
 dl = 3
+=======
+dr = 3
+dl = 6
+>>>>>>> 312fb7641bea6e42e64a1e265f13b3977766f3d2
 
 famus_filename = f'grids/Magnet_size_study/ISTELL_{dr}cm_cubes_{dl}cm_drawers.focus'
 
@@ -170,9 +175,15 @@ print('Number of available dipoles = ', pm_opt.ndipoles)
 # Set some hyperparameters for the optimization
 algorithm = 'ArbVec'  # Algorithm to use
 nAdjacent = 1  # How many magnets to consider "adjacent" to one another
+<<<<<<< HEAD
 nHistory = 251 # How often to save the algorithm progress
 thresh_angle = np.pi # The angle between two "adjacent" dipoles such that they should be removed
 max_nMagnets = 45180
+=======
+nHistory = 54 # How often to save the algorithm progress
+thresh_angle = np.pi # The angle between two "adjacent" dipoles such that they should be removed
+max_nMagnets = 1080
+>>>>>>> 312fb7641bea6e42e64a1e265f13b3977766f3d2
 nBacktracking = 200
 kwargs = initialize_default_kwargs('GPMO')
 kwargs['K'] = max_nMagnets # Maximum number of GPMO iterations to run
@@ -225,7 +236,7 @@ s_plot.to_vtk(OUT_DIR + "m_optimized_K" + str(int(max_nMagnets / (kwargs['nhisto
 B_max = 1.465
 mu0 = 4 * np.pi * 1e-7
 M_max = B_max / mu0 
-dipoles = pm_opt.m.reshape(pm_opt.ndipoles, 3)
+dipoles = pm_opt.m.reshape(pm_opt.ndipoles*3)
 print('Volume of permanent magnets is = ', np.sum(np.sqrt(np.sum(dipoles ** 2, axis=-1))) / M_max)
 print('sum(|m_i|)', np.sum(np.sqrt(np.sum(dipoles ** 2, axis=-1))))
 
@@ -251,7 +262,11 @@ if save_plots:
     make_Bnormal_plots(bs, s_plot, OUT_DIR, "biot_savart_optimized")
 
     # Look through the solutions as function of K and make plots
+<<<<<<< HEAD
     for k in range(0, kwargs["nhistory"] + 1, 25):
+=======
+    for k in range(0, kwargs["nhistory"] + 1, 2):
+>>>>>>> 312fb7641bea6e42e64a1e265f13b3977766f3d2
         mk = m_history[:, :, k].reshape(pm_opt.ndipoles * 3)
         np.savetxt(OUT_DIR + 'result_m=' + str(int(max_nMagnets / (kwargs['nhistory']) * k)) + '.txt', m_history[:, :, k].reshape(pm_opt.ndipoles * 3))
         b_dipole = DipoleField(
