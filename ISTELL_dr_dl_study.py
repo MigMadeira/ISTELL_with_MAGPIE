@@ -23,8 +23,8 @@ ntheta = 64 # same as above
 surface_flag = 'wout'
 input_name = 'wout_ISTTOK_final.nc'
 coordinate_flag = 'cartesian'
-dr = 2
-dl = 2
+dr = 1
+dl = 3
 
 famus_filename = f'grids/Magnet_size_study/ISTELL_{dr}cm_cubes_{dl}cm_drawers.focus'
 
@@ -170,12 +170,12 @@ print('Number of available dipoles = ', pm_opt.ndipoles)
 # Set some hyperparameters for the optimization
 algorithm = 'ArbVec'  # Algorithm to use
 nAdjacent = 1  # How many magnets to consider "adjacent" to one another
-nHistory = 100 # How often to save the algorithm progress
+nHistory = 251 # How often to save the algorithm progress
 thresh_angle = np.pi # The angle between two "adjacent" dipoles such that they should be removed
-max_nMagnets = 6100
+max_nMagnets = 45180
 nBacktracking = 200
 kwargs = initialize_default_kwargs('GPMO')
-kwargs['K'] = 6100 # Maximum number of GPMO iterations to run
+kwargs['K'] = max_nMagnets # Maximum number of GPMO iterations to run
 kwargs['nhistory'] = nHistory
 if algorithm == 'backtracking' or algorithm == 'ArbVec_backtracking':
     kwargs['backtracking'] = nBacktracking  # How often to perform the backtrackinig
@@ -251,7 +251,7 @@ if save_plots:
     make_Bnormal_plots(bs, s_plot, OUT_DIR, "biot_savart_optimized")
 
     # Look through the solutions as function of K and make plots
-    for k in range(0, kwargs["nhistory"] + 1, 10):
+    for k in range(0, kwargs["nhistory"] + 1, 25):
         mk = m_history[:, :, k].reshape(pm_opt.ndipoles * 3)
         np.savetxt(OUT_DIR + 'result_m=' + str(int(max_nMagnets / (kwargs['nhistory']) * k)) + '.txt', m_history[:, :, k].reshape(pm_opt.ndipoles * 3))
         b_dipole = DipoleField(
