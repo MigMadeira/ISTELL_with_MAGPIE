@@ -23,7 +23,7 @@ ntheta = 64 # same as above
 
 input_name = 'wout_ISTTOK_final.nc'
 coordinate_flag = 'cartesian'
-famus_filename = 'grids/ISTELL_shifted_axis/ISTELL_1cm_cubes_shifted_radial_extent=02725m_nfp=2.focus'
+famus_filename = 'grids/ISTELL_shifted_axis/ISTELL_1cm_cubes_shifted_radial_extent=02725m_nfp=2_w_tor_removal.focus'
 
 # Read in the plasma equilibrium file
 TEST_DIR = Path(__file__).parent
@@ -50,7 +50,7 @@ vmec = Vmec(TEST_DIR / input_name)
 order = 5
 # Number of unique coil shapes, i.e. the number of coils per half field period:
 # (Since the configuration has nfp = 5, multiply by 2*ncoils to get the total number of coils.)
-ncoils = int(16/(2*s.nfp))
+ncoils = int(24/(2*s.nfp))
 
 # Major radius for the initial circular coils:
 R0 = 0.52
@@ -189,12 +189,12 @@ print('Number of available dipoles = ', pm_opt.ndipoles)
 # Set some hyperparameters for the optimization
 algorithm = 'ArbVec'  # Algorithm to use
 nAdjacent = 1  # How many magnets to consider "adjacent" to one another
-nHistory = 500 # How often to save the algorithm progress
+nHistory = 300 # How often to save the algorithm progress
 thresh_angle = np.pi # The angle between two "adjacent" dipoles such that they should be removed
-max_nMagnets = 52500
+max_nMagnets = 32100
 nBacktracking = 200
 kwargs = initialize_default_kwargs('GPMO')
-kwargs['K'] = 52500 # Maximum number of GPMO iterations to run
+kwargs['K'] = 32100 # Maximum number of GPMO iterations to run
 kwargs['nhistory'] = nHistory
 if algorithm == 'backtracking' or algorithm == 'ArbVec_backtracking':
     kwargs['backtracking'] = nBacktracking  # How often to perform the backtrackinig
@@ -270,7 +270,7 @@ if save_plots:
     make_Bnormal_plots(bs, s_plot, OUT_DIR, "biot_savart_optimized")
 
     # Look through the solutions as function of K and make plots
-    for k in range(0, kwargs["nhistory"] + 1, 31):
+    for k in range(0, kwargs["nhistory"] + 1, 30):
         mk = m_history[:, :, k].reshape(pm_opt.ndipoles * 3)
         np.savetxt(OUT_DIR + 'result_m=' + str(int(max_nMagnets / (kwargs['nhistory']) * k)) + '.txt', m_history[:, :, k].reshape(pm_opt.ndipoles * 3))
         b_dipole = DipoleField(
