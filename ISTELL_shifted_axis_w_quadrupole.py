@@ -21,7 +21,7 @@ comm = None
 nphi = 64 # need to set this to 64 for a real run
 ntheta = 64 # same as above
 
-input_name = 'wout_ISTTOK_final.nc'
+input_name = 'wout_ISTELL_final.nc'
 coordinate_flag = 'cartesian'
 famus_filename = 'grids/ISTELL_shifted_axis/ISTELL_1cm_cubes_shifted_radial_extent=02725m_nfp=2_w_tor_removal.focus'
 
@@ -60,7 +60,7 @@ R1 = 0.2025
 
 #Initialize the coils 
 base_curves = create_equally_spaced_curves(ncoils, s.nfp, stellsym=True, R0=R0, R1=R1, order=order, numquadpoints=128)
-base_currents = [Current(1.0) * 48e3 for i in range(ncoils)]
+base_currents = [Current(1.0) * 2e3 for i in range(ncoils)]
 base_currents[0].fix_all()
 coils = coils_via_symmetries(base_curves, base_currents, s.nfp, True)
 
@@ -86,7 +86,7 @@ c4.set("x0", 0.46 - 0.1275) #r0 = ISTTOK axis - radius
 c4.set("x1", -(0.2025 + 0.155)) #z0
 
 quadrupole_curves = [c1,c2,c3,c4]
-quadrupole_currents = [Current(1.0) * 48e3 for i in range(4)] #estimar melhor a currente base que vem para aqui.
+quadrupole_currents = [Current(1.0) * 2e3 for i in range(4)] #estimar melhor a currente base que vem para aqui.
 
 for i in range(len(quadrupole_curves)):
     #fix degrees of freedom of the quadrupole to guarantee it is circular.
@@ -106,7 +106,7 @@ bs = BiotSavart(coils)
 make_Bnormal_plots(bs, s_plot, OUT_DIR, "biot_savart_initial")
 
 # optimize the currents in the TF coils
-bs = ISTELL_coil_optimization(s, bs, base_curves, curves, OUT_DIR)
+bs = ISTELL_coil_optimization(s, bs, base_curves, curves, 1e-2, OUT_DIR)
 bs.set_points(s.gamma().reshape((-1, 3)))
 
 # Set up correct Bnormal from TF coils 

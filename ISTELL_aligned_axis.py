@@ -21,7 +21,7 @@ comm = None
 nphi = 64 # need to set this to 64 for a real run
 ntheta = 64 # same as above
 
-input_name = 'wout_ISTTOK_final.nc'
+input_name = 'wout_ISTELL_final.nc'
 coordinate_flag = 'cartesian'
 famus_filename = 'grids/ISTELL_aligned_axis/ISTELL_1cm_cubes_radial_extent=0505m_aligned_nfp=2_nPhi=4.focus'
 
