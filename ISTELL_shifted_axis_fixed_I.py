@@ -40,7 +40,7 @@ s_plot = SurfaceRZFourier.from_wout(
 )
 
 # Make the output directory
-OUT_DIR = 'ISTELL_shifted_axis/no_diagnostics_no_quadrupole/'
+OUT_DIR = 'ISTELL_shifted_axis/no_diagnostics_no_quadrupole_fixed_I/'
 os.makedirs(OUT_DIR, exist_ok=True)
 
 #setting radius for the circular coils
@@ -60,12 +60,13 @@ R1 = 0.2025
 
 #Initialize the coils 
 base_curves = create_equally_spaced_curves(ncoils, s.nfp, stellsym=True, R0=R0, R1=R1, order=order, numquadpoints=128)
-base_currents = [Current(1.0) * 43e3 for i in range(ncoils)]
+base_currents = [Current(1.0) * 48e3 for i in range(ncoils)]
 coils = coils_via_symmetries(base_curves, base_currents, s.nfp, True)
 
 # fix all the coil shapes so only the currents are optimized
 for i in range(ncoils):
     base_curves[i].fix_all()
+    base_currents[i].fix_all()
 
 # Initialize the coil curves and save the data to vtk
 curves = [c.curve for c in coils]
@@ -76,8 +77,6 @@ bs = BiotSavart(coils)
 # Plot initial Bnormal on plasma surface from un-optimized BiotSavart coils
 make_Bnormal_plots(bs, s_plot, OUT_DIR, "biot_savart_initial")
 
-# optimize the currents in the TF coils
-bs = TF_coil_optimization(s, bs, base_curves, curves, out_dir=OUT_DIR)
 bs.set_points(s.gamma().reshape((-1, 3)))
 Bnormal = np.sum(bs.B().reshape((nphi, ntheta, 3)) * s.unitnormal(), axis=2)
 
@@ -87,7 +86,7 @@ calculate_on_axis_B(bs, s)
 # Set up correct Bnormal from TF coils 
 bs.set_points(s.gamma().reshape((-1, 3)))
 Bnormal = np.sum(bs.B().reshape((nphi, ntheta, 3)) * s.unitnormal(), axis=2)
-bs.save(OUT_DIR + f"biot_savart_opt.json")
+bs.save(OUT_DIR + f"biot_savart_initial.json")
 
 #load focus file with the grid info
 mag_data = FocusData(famus_filename)

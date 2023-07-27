@@ -40,14 +40,14 @@ s_plot = SurfaceRZFourier.from_wout(
 )
 
 # Make the output directory
-OUT_DIR = 'ISTELL_aligned_axis/no_diagnostics_no_quadripole/'
+OUT_DIR = 'ISTELL_aligned_axis/no_diagnostics_no_quadrupole/'
 os.makedirs(OUT_DIR, exist_ok=True)
 
 #setting radius for the circular coils
 vmec = Vmec(TEST_DIR / input_name)
 
 # Number of Fourier modes describing each Cartesian component of each coil:
-order = 5
+order = 2
 # Number of unique coil shapes, i.e. the number of coils per half field period:
 # (Since the configuration has nfp = 5, multiply by 2*ncoils to get the total number of coils.)
 ncoils = int(16/(2*s.nfp))
@@ -60,13 +60,13 @@ R1 = 0.2025
 
 #Initialize the coils 
 base_curves = create_equally_spaced_curves(ncoils, s.nfp, stellsym=True, R0=R0, R1=R1, order=order, numquadpoints=128)
-base_currents = [Current(1.0) * 48e3 for i in range(ncoils)]
-base_currents[0].fix_all()
+base_currents = [Current(1.0) * 65e3 for i in range(ncoils)]
 coils = coils_via_symmetries(base_curves, base_currents, s.nfp, True)
 
 # fix all the coil shapes so only the currents are optimized
 for i in range(ncoils):
     base_curves[i].fix_all()
+    base_currents[i].fix_all()
 
 # Initialize the coil curves and save the data to vtk
 curves = [c.curve for c in coils]
@@ -78,7 +78,7 @@ bs = BiotSavart(coils)
 make_Bnormal_plots(bs, s_plot, OUT_DIR, "biot_savart_initial")
 
 # optimize the currents in the TF coils
-bs = coil_optimization(s, bs, base_curves, curves, OUT_DIR)
+bs = TF_coil_optimization(s, bs, base_curves, curves, out_dir=OUT_DIR)
 bs.set_points(s.gamma().reshape((-1, 3)))
 Bnormal = np.sum(bs.B().reshape((nphi, ntheta, 3)) * s.unitnormal(), axis=2)
 
