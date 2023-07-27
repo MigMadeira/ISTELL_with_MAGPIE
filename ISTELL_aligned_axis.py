@@ -66,7 +66,7 @@ coils = coils_via_symmetries(base_curves, base_currents, s.nfp, True)
 # fix all the coil shapes so only the currents are optimized
 for i in range(ncoils):
     base_curves[i].fix_all()
-    base_currents[i].fix_all()
+    
 
 # Initialize the coil curves and save the data to vtk
 curves = [c.curve for c in coils]
