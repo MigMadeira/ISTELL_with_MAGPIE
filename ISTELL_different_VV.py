@@ -21,10 +21,10 @@ nphi = 64 # need to set this to 64 for a real run
 ntheta = 64 # same as above
 input_name = 'wout_ISTTOK_final_rescaled.nc'
 coordinate_flag = 'cartesian'
-famus_filename = 'grids/ISTELL_different_VV.focus'
+famus_filename = 'grids/ISTELL_diff_VV/ISTELL_different_VV.focus'
 
 # Read in the plasma equilibrium file
-TEST_DIR = (Path(__file__).parent / ".." / ".." / "tests" / "test_files").resolve()
+TEST_DIR = (Path(__file__)).resolve()
 surface_filename = TEST_DIR / input_name
 s = SurfaceRZFourier.from_wout(surface_filename, range="half period", nphi=nphi, ntheta=ntheta)
 
@@ -74,11 +74,6 @@ bs = BiotSavart(coils)
 
 # Plot initial Bnormal on plasma surface from un-optimized BiotSavart coils
 make_Bnormal_plots(bs, s_plot, OUT_DIR, "biot_savart_initial")
-
-# optimize the currents in the TF coils
-s, bs = coil_optimization(s, bs, base_curves, curves, OUT_DIR, s_plot, 'ISTELL')
-bs.set_points(s.gamma().reshape((-1, 3)))
-Bnormal = np.sum(bs.B().reshape((nphi, ntheta, 3)) * s.unitnormal(), axis=2)
 
 # check after-optimization average on-axis magnetic field strength
 calculate_on_axis_B(bs, s)
@@ -162,11 +157,11 @@ s_out.to_vtk(OUT_DIR + "surf_out")
 pm_opt.remove_magnets_inside_surface(s_out)
 
 # remove any dipoles where the diagnostic ports should be
-cylinder_list = [sopp.Cylinder(0.52, 0.01, np.pi/2, 2*np.pi/12, 0.21, 0.0575, np.pi/12, 0),
-                 sopp.Cylinder(0.52, 0.01, np.pi/2, 2*np.pi/12, 0.21, 0.035, np.pi/12, np.pi/2),
-                 sopp.Cylinder(0.52, 0.01, np.pi/2, 2*np.pi/12, 0.21, 0.035, np.pi/12, np.pi),
-                 sopp.Cylinder(0.52, 0.01, np.pi/2, 4*np.pi/12, 0.21, 0.035, np.pi/6, 0),
-                 sopp.Cylinder(0.52, 0.01, np.pi/2, 4*np.pi/12, 0.21, 0.0575, np.pi/6, np.pi/2)]
+cylinder_list = [sopp.Cylinder(0.52, 0.01, 2*np.pi/12, np.pi/2, 0.21, 0.0575, np.pi/12, 0),
+                 sopp.Cylinder(0.52, 0.01, 2*np.pi/12, 0, 0.21, 0.035, np.pi/12, np.pi/2),
+                 sopp.Cylinder(0.52, 0.01, 2*np.pi/12, 3*np.pi/2, 0.21, 0.035, np.pi/12, np.pi),
+                 sopp.Cylinder(0.52, 0.01, 4*np.pi/12, np.pi/2, 0.21, 0.035, np.pi/6, 0),
+                 sopp.Cylinder(0.52, 0.01, 4*np.pi/12, 0, 0.21, 0.0575, np.pi/6, np.pi/2)]
 pm_opt.remove_dipoles_inside_shapes(cylinder_list)
 
 b_dipole = DipoleField(pm_opt.dipole_grid_xyz, pm_opt.m,
