@@ -157,11 +157,11 @@ s_out.to_vtk(OUT_DIR + "surf_out")
 pm_opt.remove_magnets_inside_surface(s_out)
 
 # remove any dipoles where the diagnostic ports should be
-cylinder_list = [sopp.Cylinder(0.52, 0.01, 2*np.pi/12, np.pi/2, 0.21, 0.0575, np.pi/12, 0),
-                 sopp.Cylinder(0.52, 0.01, 2*np.pi/12, 0, 0.21, 0.035, np.pi/12, np.pi/2),
-                 sopp.Cylinder(0.52, 0.01, 2*np.pi/12, 3*np.pi/2, 0.21, 0.035, np.pi/12, np.pi),
-                 sopp.Cylinder(0.52, 0.01, 4*np.pi/12, np.pi/2, 0.21, 0.035, np.pi/6, 0),
-                 sopp.Cylinder(0.52, 0.01, 4*np.pi/12, 0, 0.21, 0.0575, np.pi/6, np.pi/2)]
+cylinder_list = [sopp.Cylinder(0.52+0.035, 0.03, 2*np.pi/12, np.pi/2, 0.21, 0.0575, 2*np.pi/12, 0),
+                 sopp.Cylinder(0.52, 0.03, 2*np.pi/12, 0, 0.21, 0.035, 2*np.pi/12, np.pi/2),
+                 sopp.Cylinder(0.52+0.035, 0.03, 2*np.pi/12, 3*np.pi/2, 0.21, 0.035, 2*np.pi/12, np.pi),
+                 sopp.Cylinder(0.52-0.035, 0.03, 4*np.pi/12, np.pi/2, 0.21, 0.035, 4*np.pi/12, 0),
+                 sopp.Cylinder(0.52, 0.03, 4*np.pi/12, np.pi/9, 0.21, 0.0575, 4*np.pi/12, np.pi/2)]
 pm_opt.remove_dipoles_inside_shapes(cylinder_list)
 
 b_dipole = DipoleField(pm_opt.dipole_grid_xyz, pm_opt.m,
