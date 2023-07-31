@@ -24,7 +24,7 @@ coordinate_flag = 'cartesian'
 famus_filename = 'grids/ISTELL_diff_VV/ISTELL_different_VV.focus'
 
 # Read in the plasma equilibrium file
-TEST_DIR = (Path(__file__)).resolve()
+TEST_DIR = (Path(__file__).parent).resolve()
 surface_filename = TEST_DIR / input_name
 s = SurfaceRZFourier.from_wout(surface_filename, range="half period", nphi=nphi, ntheta=ntheta)
 
@@ -172,6 +172,6 @@ b_dipole._toVTK(OUT_DIR + "Dipole_Fields_K_after_cylinder_removal")
 print('Number of available dipoles after diagnostic port and toroidal removal = ', pm_opt.ndipoles)
 
 for i in range(len(cylinder_list)):
-    cylinder_to_vtk(cylinder_list[i], OUT_DIR + f"/diagnostics/diagnostic {i}")
+    cylinder_to_vtk(cylinder_list[i], OUT_DIR + f"diagnostics/diagnostic {i}")
 
 pm_opt.write_to_famus(Path(OUT_DIR))
