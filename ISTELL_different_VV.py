@@ -8,12 +8,12 @@ from simsopt.field import Current, DipoleField, coils_via_symmetries
 import time
 from simsopt.util.permanent_magnet_helper_functions import *
 from simsopt.mhd.vmec import Vmec
-from simsopt.util.permanent_magnet_helper_functions import *
 from simsopt.util import FocusData
 from simsopt.util import discretize_polarizations, polarization_axes
 import simsoptpp as sopp
 from simsopt.objectives import SquaredFlux
 from matplotlib import pyplot as plt
+from simsopt.solve import GPMO
 
 t_start = time.time()
 
@@ -159,15 +159,15 @@ s_out.to_vtk(OUT_DIR + "surf_out")
 pm_opt.remove_magnets_inside_surface(s_out)
 
 # remove any dipoles where the diagnostic ports should be
-cylinder_list = [sopp.Cylinder(0.52+0.013, 0.06, 2*np.pi/12, np.pi/2, 0.21, 0.0575, 2*np.pi/12, 0),
-                 sopp.Cylinder(0.52, 0.03, 2*np.pi/12, 0, 0.21, 0.035, 2*np.pi/12, np.pi/2),
+cylinder_list = [sopp.Cylinder(0.52+0.015, 0.06, 2*np.pi/12, np.pi/2, 0.21, 0.0575, 2*np.pi/12, 0),
+                 sopp.Cylinder(0.52, 0.03, 2*np.pi/12, np.pi/9, 0.21, 0.035, 2*np.pi/12, np.pi/2),
                  sopp.Cylinder(0.52+0.035, 0.03, 2*np.pi/12, 3*np.pi/2, 0.21, 0.035, 2*np.pi/12, np.pi),
                  sopp.Cylinder(0.52-0.035, 0.03, 4*np.pi/12, np.pi/2, 0.21, 0.035, 4*np.pi/12, 0),
                  sopp.Cylinder(0.52, 0.03, 4*np.pi/12, 6*np.pi/18 + 1*np.pi/32, 0.21, 0.0575, 4*np.pi/12, np.pi/2)]
 pm_opt.remove_dipoles_inside_shapes(cylinder_list)
 
 b_dipole = DipoleField(pm_opt.dipole_grid_xyz, pm_opt.m,
-                       nfp=1, coordinate_flag=pm_opt.coordinate_flag, m_maxima=pm_opt.m_maxima,stellsym=False)
+                       nfp=2, coordinate_flag=pm_opt.coordinate_flag, m_maxima=pm_opt.m_maxima,stellsym=True)
 
 b_dipole._toVTK(OUT_DIR + "Dipole_Fields_K_after_cylinder_removal")
 
@@ -181,9 +181,9 @@ pm_opt.write_to_famus(Path(OUT_DIR))
 # Set some hyperparameters for the optimization
 algorithm = 'ArbVec'  # Algorithm to use
 nAdjacent = 1  # How many magnets to consider "adjacent" to one another
-nHistory = 300 # How often to save the algorithm progress
+nHistory = 400 # How often to save the algorithm progress
 thresh_angle = np.pi # The angle between two "adjacent" dipoles such that they should be removed
-max_nMagnets = 23100
+max_nMagnets = 44000
 nBacktracking = 200
 kwargs = initialize_default_kwargs('GPMO')
 kwargs['K'] = max_nMagnets # Maximum number of GPMO iterations to run
@@ -262,7 +262,7 @@ if save_plots:
     make_Bnormal_plots(bs, s_plot, OUT_DIR, "biot_savart_optimized")
 
     # Look through the solutions as function of K and make plots
-    for k in range(0, kwargs["nhistory"] + 1, 30):
+    for k in range(0, kwargs["nhistory"] + 1, 11):
         mk = m_history[:, :, k].reshape(pm_opt.ndipoles * 3)
         np.savetxt(OUT_DIR + 'result_m=' + str(int(max_nMagnets / (kwargs['nhistory']) * k)) + '.txt', m_history[:, :, k].reshape(pm_opt.ndipoles * 3))
         b_dipole = DipoleField(
