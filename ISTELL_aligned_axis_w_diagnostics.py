@@ -31,7 +31,7 @@ famus_filename = 'grids/ISTELL_aligned_axis/ISTELL_aligned_full_2cm.focus'
 # Read in the plasma equilibrium file
 TEST_DIR = Path(__file__).parent
 surface_filename = TEST_DIR / input_name
-s = SurfaceRZFourier.from_wout(surface_filename, range="half period", nphi=nphi, ntheta=ntheta)
+s = SurfaceRZFourier.from_wout(surface_filename, range="full torus", nphi=nphi, ntheta=ntheta)
 
 # Make higher resolution surface for plotting Bnormal
 qphi = 2 * nphi
@@ -183,7 +183,7 @@ b_dipole = DipoleField(pm_opt.dipole_grid_xyz, pm_opt.m,
                        nfp=s.nfp, coordinate_flag=pm_opt.coordinate_flag, m_maxima=pm_opt.m_maxima,)
 b_dipole._toVTK(OUT_DIR + "Dipole_Fields_K_after_diagnostic_removal")
 
-
+exit()
 # Set some hyperparameters for the optimization
 algorithm = 'ArbVec'  # Algorithm to use
 nAdjacent = 1  # How many magnets to consider "adjacent" to one another
