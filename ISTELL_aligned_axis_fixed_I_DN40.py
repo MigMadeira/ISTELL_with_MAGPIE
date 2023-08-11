@@ -41,7 +41,7 @@ s_plot = SurfaceRZFourier.from_wout(
 )
 
 # Make the output directory
-OUT_DIR = 'ISTELL_aligned_axis/no_quadrupole_fixed_I_DN40/'
+OUT_DIR = 'ISTELL_aligned_axis/no_quadrupole_fixed_I_DN100/'
 os.makedirs(OUT_DIR, exist_ok=True)
 
 #setting radius for the circular coils
@@ -160,7 +160,7 @@ b_dipole = DipoleField(pm_opt.dipole_grid_xyz, pm_opt.m,
 b_dipole._toVTK(OUT_DIR + "Dipole_Fields_K")
 
 # remove any dipoles where the diagnostic ports should be
-cylinder_list = [sopp.Cylinder(0.46, 0.085, 0, 0, 0.21, 0.035, 0, np.pi/2)]
+cylinder_list = [sopp.Cylinder(0.46, 0.085, 0, 0, 0.21, 0.076, 0, np.pi/2)]
 pm_opt.remove_dipoles_inside_shapes(cylinder_list)
 
 b_dipole = DipoleField(pm_opt.dipole_grid_xyz, pm_opt.m,
@@ -171,7 +171,7 @@ b_dipole._toVTK(OUT_DIR + "Dipole_Fields_K_after_cylinder_removal")
 print('Number of available dipoles after diagnostic port removal = ', pm_opt.ndipoles)
 
 for i in range(len(cylinder_list)):
-    cylinder_to_vtk(cylinder_list[i], OUT_DIR + f"DN40")
+    cylinder_to_vtk(cylinder_list[i], OUT_DIR + f"DN100")
     
 # Set some hyperparameters for the optimization
 algorithm = 'ArbVec'  # Algorithm to use
@@ -214,7 +214,7 @@ pm_opt.m = np.ravel(m_history[:, :, min_ind])
 print("best result = ", 0.5 * np.sum((pm_opt.A_obj @ pm_opt.m - pm_opt.b_obj) ** 2))
 np.savetxt(OUT_DIR + 'best_result_m=' + str(int(max_nMagnets/ (kwargs['nhistory']) * min_ind )) + '.txt', m_history[:, :, min_ind ].reshape(pm_opt.ndipoles * 3))
 b_dipole = DipoleField(pm_opt.dipole_grid_xyz, m_history[:, :, min_ind ].reshape(pm_opt.ndipoles * 3),
-                       nfp=s.nfp, coordinate_flag=pm_opt.coordinate_flag, m_maxima=pm_opt.m_maxima,)
+                       nfp=1, coordinate_flag=pm_opt.coordinate_flag, m_maxima=pm_opt.m_maxima, stellsym=False)
 b_dipole.set_points(s_plot.gamma().reshape((-1, 3)))
 b_dipole._toVTK(OUT_DIR + "Dipole_Fields_K" + str(int(max_nMagnets / (kwargs['nhistory']) * min_ind)))
 bs.set_points(s_plot.gamma().reshape((-1, 3)))
@@ -257,15 +257,16 @@ if save_plots:
     make_Bnormal_plots(bs, s_plot, OUT_DIR, "biot_savart_optimized")
 
     # Look through the solutions as function of K and make plots
-    for k in range(0, kwargs["nhistory"] + 1, 5):
+    for k in range(0, kwargs["nhistory"] + 1, 23):
         mk = m_history[:, :, k].reshape(pm_opt.ndipoles * 3)
         np.savetxt(OUT_DIR + 'result_m=' + str(int(max_nMagnets / (kwargs['nhistory']) * k)) + '.txt', m_history[:, :, k].reshape(pm_opt.ndipoles * 3))
         b_dipole = DipoleField(
             pm_opt.dipole_grid_xyz,
             mk, 
-            nfp=s.nfp,
+            nfp=1,
             coordinate_flag=pm_opt.coordinate_flag,
             m_maxima=pm_opt.m_maxima,
+	    stellsym=False
         )
         b_dipole.set_points(s_plot.gamma().reshape((-1, 3)))
         K_save = int(max_nMagnets/ kwargs['nhistory'] * k)
@@ -294,9 +295,10 @@ print("% of dipoles that are nonzero = ", num_nonzero)
 b_dipole = DipoleField(
     pm_opt.dipole_grid_xyz,
     pm_opt.m, 
-    nfp=s.nfp,
+    nfp=1,
     coordinate_flag=pm_opt.coordinate_flag,
     m_maxima=pm_opt.m_maxima,
+    stellsym=False
 )
 b_dipole.set_points(s_plot.gamma().reshape((-1, 3)))
 bs.set_points(s_plot.gamma().reshape((-1, 3)))

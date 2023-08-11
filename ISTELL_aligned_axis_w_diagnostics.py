@@ -156,7 +156,7 @@ print('Number of available dipoles = ', pm_opt.ndipoles)
 
 pm_opt.m = np.zeros(pm_opt.ndipoles*3)
 b_dipole = DipoleField(pm_opt.dipole_grid_xyz, pm_opt.m,
-                       nfp=s.nfp, coordinate_flag=pm_opt.coordinate_flag, m_maxima=pm_opt.m_maxima,)
+                       nfp=1, coordinate_flag=pm_opt.coordinate_flag, m_maxima=pm_opt.m_maxima, stellsym=False)
 
 b_dipole._toVTK(OUT_DIR + "Dipole_Fields_K")
 
@@ -180,10 +180,9 @@ print('Number of available dipoles after diagnostic removal = ', pm_opt.ndipoles
 
 pm_opt.m = np.zeros(pm_opt.ndipoles*3)
 b_dipole = DipoleField(pm_opt.dipole_grid_xyz, pm_opt.m,
-                       nfp=s.nfp, coordinate_flag=pm_opt.coordinate_flag, m_maxima=pm_opt.m_maxima,)
+                       nfp=1, coordinate_flag=pm_opt.coordinate_flag, m_maxima=pm_opt.m_maxima, stellsym=False)
 b_dipole._toVTK(OUT_DIR + "Dipole_Fields_K_after_diagnostic_removal")
 
-exit()
 # Set some hyperparameters for the optimization
 algorithm = 'ArbVec'  # Algorithm to use
 nAdjacent = 1  # How many magnets to consider "adjacent" to one another
@@ -225,7 +224,7 @@ pm_opt.m = np.ravel(m_history[:, :, min_ind])
 print("best result = ", 0.5 * np.sum((pm_opt.A_obj @ pm_opt.m - pm_opt.b_obj) ** 2))
 np.savetxt(OUT_DIR + 'best_result_m=' + str(int(max_nMagnets/ (kwargs['nhistory']) * min_ind )) + '.txt', m_history[:, :, min_ind ].reshape(pm_opt.ndipoles * 3))
 b_dipole = DipoleField(pm_opt.dipole_grid_xyz, m_history[:, :, min_ind ].reshape(pm_opt.ndipoles * 3),
-                       nfp=s.nfp, coordinate_flag=pm_opt.coordinate_flag, m_maxima=pm_opt.m_maxima,)
+                       nfp=1, coordinate_flag=pm_opt.coordinate_flag, m_maxima=pm_opt.m_maxima, stellsym=False)
 b_dipole.set_points(s_plot.gamma().reshape((-1, 3)))
 b_dipole._toVTK(OUT_DIR + "Dipole_Fields_K" + str(int(max_nMagnets / (kwargs['nhistory']) * min_ind)))
 bs.set_points(s_plot.gamma().reshape((-1, 3)))
@@ -268,15 +267,16 @@ if save_plots:
     make_Bnormal_plots(bs, s_plot, OUT_DIR, "biot_savart_optimized")
 
     # Look through the solutions as function of K and make plots
-    for k in range(0, kwargs["nhistory"] + 1, 3):
+    for k in range(0, kwargs["nhistory"] + 1, 20):
         mk = m_history[:, :, k].reshape(pm_opt.ndipoles * 3)
         np.savetxt(OUT_DIR + 'result_m=' + str(int(max_nMagnets / (kwargs['nhistory']) * k)) + '.txt', m_history[:, :, k].reshape(pm_opt.ndipoles * 3))
         b_dipole = DipoleField(
             pm_opt.dipole_grid_xyz,
             mk, 
-            nfp=s.nfp,
+            nfp=1,
             coordinate_flag=pm_opt.coordinate_flag,
             m_maxima=pm_opt.m_maxima,
+	    stellsym=False
         )
         b_dipole.set_points(s_plot.gamma().reshape((-1, 3)))
         K_save = int(max_nMagnets/ kwargs['nhistory'] * k)
@@ -305,9 +305,10 @@ print("% of dipoles that are nonzero = ", num_nonzero)
 b_dipole = DipoleField(
     pm_opt.dipole_grid_xyz,
     pm_opt.m, 
-    nfp=s.nfp,
+    nfp=1,
     coordinate_flag=pm_opt.coordinate_flag,
     m_maxima=pm_opt.m_maxima,
+    stellsym=False
 )
 b_dipole.set_points(s_plot.gamma().reshape((-1, 3)))
 bs.set_points(s_plot.gamma().reshape((-1, 3)))
