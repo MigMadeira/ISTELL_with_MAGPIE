@@ -7,7 +7,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 from simsopt.field import BiotSavart, DipoleField, Current, coils_via_symmetries
-from simsopt.geo import PermanentMagnetGrid, SurfaceRZFourier, create_equally_spaced_curves, curves_to_vtk
+from simsopt.geo import PermanentMagnetGrid, SurfaceRZFourier, create_equally_spaced_curves, curves_to_vtk, cylinder_to_vtk
 from simsopt.objectives import SquaredFlux
 from simsopt.solve import GPMO
 from simsopt.util import FocusData, discretize_polarizations, polarization_axes
@@ -19,17 +19,17 @@ t_start = time.time()
 
 # Set some parameters
 comm = None
-nphi = 64 # need to set this to 64 for a real run
+nphi = 64*4 # need to set this to 64 for a real run
 ntheta = 64 # same as above
 
 input_name = 'wout_ISTELL_final.nc'
 coordinate_flag = 'cartesian'
-famus_filename = 'grids/ISTELL_aligned_axis/ISTELL_aligned_full.focus'
+famus_filename = 'grids/ISTELL_aligned_axis/ISTELL_aligned_full_2cm.focus'
 
 # Read in the plasma equilibrium file
 TEST_DIR = Path(__file__).parent
 surface_filename = TEST_DIR / input_name
-s = SurfaceRZFourier.from_wout(surface_filename, range="half period", nphi=nphi, ntheta=ntheta)
+s = SurfaceRZFourier.from_wout(surface_filename, range="full torus", nphi=nphi, ntheta=ntheta)
 
 # Make higher resolution surface for plotting Bnormal
 qphi = 2 * nphi
@@ -41,7 +41,7 @@ s_plot = SurfaceRZFourier.from_wout(
 )
 
 # Make the output directory
-OUT_DIR = 'ISTELL_aligned_axis/no_diagnostics_no_quadrupole_fixed_I_DN40/'
+OUT_DIR = 'ISTELL_aligned_axis/no_quadrupole_fixed_I_DN40/'
 os.makedirs(OUT_DIR, exist_ok=True)
 
 #setting radius for the circular coils
@@ -171,14 +171,14 @@ b_dipole._toVTK(OUT_DIR + "Dipole_Fields_K_after_cylinder_removal")
 print('Number of available dipoles after diagnostic port removal = ', pm_opt.ndipoles)
 
 for i in range(len(cylinder_list)):
-    cylinder_to_vtk(cylinder_list[i], OUT_DIR + f"/diagnostics/DN40")
+    cylinder_to_vtk(cylinder_list[i], OUT_DIR + f"DN40")
     
 # Set some hyperparameters for the optimization
 algorithm = 'ArbVec'  # Algorithm to use
 nAdjacent = 1  # How many magnets to consider "adjacent" to one another
-nHistory = 300*4 # How often to save the algorithm progress
+nHistory = 276 # How often to save the algorithm progress
 thresh_angle = np.pi # The angle between two "adjacent" dipoles such that they should be removed
-max_nMagnets = 23100*4
+max_nMagnets = 11040
 nBacktracking = 200
 kwargs = initialize_default_kwargs('GPMO')
 kwargs['K'] = max_nMagnets # Maximum number of GPMO iterations to run
@@ -257,7 +257,7 @@ if save_plots:
     make_Bnormal_plots(bs, s_plot, OUT_DIR, "biot_savart_optimized")
 
     # Look through the solutions as function of K and make plots
-    for k in range(0, kwargs["nhistory"] + 1, 30*4):
+    for k in range(0, kwargs["nhistory"] + 1, 5):
         mk = m_history[:, :, k].reshape(pm_opt.ndipoles * 3)
         np.savetxt(OUT_DIR + 'result_m=' + str(int(max_nMagnets / (kwargs['nhistory']) * k)) + '.txt', m_history[:, :, k].reshape(pm_opt.ndipoles * 3))
         b_dipole = DipoleField(

@@ -43,7 +43,7 @@ s_plot = SurfaceRZFourier.from_wout(
 )
 
 # Make the output directory
-OUT_DIR = 'ISTELL_aligned_axis/no_diagnostics_no_quadrupole_fixed_I_DN40/'
+OUT_DIR = 'ISTELL_aligned_axis/with_diagnostics/'
 os.makedirs(OUT_DIR, exist_ok=True)
 
 #setting radius for the circular coils
@@ -181,15 +181,15 @@ print('Number of available dipoles after diagnostic removal = ', pm_opt.ndipoles
 pm_opt.m = np.zeros(pm_opt.ndipoles*3)
 b_dipole = DipoleField(pm_opt.dipole_grid_xyz, pm_opt.m,
                        nfp=s.nfp, coordinate_flag=pm_opt.coordinate_flag, m_maxima=pm_opt.m_maxima,)
-b_dipole._toVTK("./grids/ISTELL_with_diagnostics/Dipole_Fields_K_after_diagnostic_removal")
+b_dipole._toVTK(OUT_DIR + "Dipole_Fields_K_after_diagnostic_removal")
 
-exit()
+
 # Set some hyperparameters for the optimization
 algorithm = 'ArbVec'  # Algorithm to use
 nAdjacent = 1  # How many magnets to consider "adjacent" to one another
-nHistory = 300*4 # How often to save the algorithm progress
+nHistory = 340 # How often to save the algorithm progress
 thresh_angle = np.pi # The angle between two "adjacent" dipoles such that they should be removed
-max_nMagnets = 23100*4
+max_nMagnets = 10200
 nBacktracking = 200
 kwargs = initialize_default_kwargs('GPMO')
 kwargs['K'] = max_nMagnets # Maximum number of GPMO iterations to run
@@ -268,7 +268,7 @@ if save_plots:
     make_Bnormal_plots(bs, s_plot, OUT_DIR, "biot_savart_optimized")
 
     # Look through the solutions as function of K and make plots
-    for k in range(0, kwargs["nhistory"] + 1, 30*4):
+    for k in range(0, kwargs["nhistory"] + 1, 3):
         mk = m_history[:, :, k].reshape(pm_opt.ndipoles * 3)
         np.savetxt(OUT_DIR + 'result_m=' + str(int(max_nMagnets / (kwargs['nhistory']) * k)) + '.txt', m_history[:, :, k].reshape(pm_opt.ndipoles * 3))
         b_dipole = DipoleField(
@@ -317,5 +317,3 @@ print('f_B = ', f_B_sf)
 total_volume = np.sum(np.sqrt(np.sum(pm_opt.m.reshape(pm_opt.ndipoles, 3) ** 2, axis=-1))) * s.nfp * 2 * mu0 / B_max
 print('Total volume = ', total_volume)
 
-t_end = time.time()
-print('Total time = ', t_end - t_start)
