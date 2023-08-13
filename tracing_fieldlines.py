@@ -145,7 +145,7 @@ bs_final = b_dipole + bs
 raxis_cc = [0.455004988086597, 0.0440156683282455, 0.00272439261412522, 
    0.000172253586663152, 1.0252868811645e-05, 5.67166789928362e-07, 
    4.45152913520489e-08, 1.03095879617727e-08, 7.56214434436398e-10, 
-   -1.92098079138534e-10]
+   -1.92098079138534e-10,0]
    
 zaxis_cs = [-0, -0.0439018971482906, -0.00270493882880684, 
    -0.000172074499581258, -1.12324407227628e-05, -7.85113554306607e-07, 
@@ -166,7 +166,12 @@ ma.x = ma.get_dofs()
 print("Mean(|B|) on axis =", np.mean(np.linalg.norm(bs_final.set_points(ma.gamma()).B(), axis=1)))
 print("Mean(Axis radius) =", np.mean(np.linalg.norm(ma.gamma(), axis=1)))
 
-sc_fieldline = SurfaceClassifier(s, h=0.03, p=2)
+s_levelset = SurfaceRZFourier.from_nphi_ntheta(mpol=mpol, ntor=ntor, stellsym=stellsym, nfp=nfp,
+                                      range="full torus", nphi=64, ntheta=24)
+s_levelset.fit_to_curve(ma, 0.70, flip_theta=False)
+
+s_levelset.to_vtk(OUT_DIR + 'surface')
+sc_fieldline = SurfaceClassifier(s_levelset, h=0.03, p=2)
 sc_fieldline.to_vtk(OUT_DIR + 'levelset', h=0.02)
 
 nfieldlines = 30
