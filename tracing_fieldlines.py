@@ -166,23 +166,28 @@ ma.x = ma.get_dofs()
 print("Mean(|B|) on axis =", np.mean(np.linalg.norm(bs_final.set_points(ma.gamma()).B(), axis=1)))
 print("Mean(Axis radius) =", np.mean(np.linalg.norm(ma.gamma(), axis=1)))
 
+mpol = 5
+ntor = 5
+nfp = s.nfp
+stellsym = True
+
 s_levelset = SurfaceRZFourier.from_nphi_ntheta(mpol=mpol, ntor=ntor, stellsym=stellsym, nfp=nfp,
                                       range="full torus", nphi=64, ntheta=24)
-s_levelset.fit_to_curve(ma, 0.70, flip_theta=False)
+s_levelset.fit_to_curve(ma, 0.40, flip_theta=False)
 
 s_levelset.to_vtk(OUT_DIR + 'surface')
 sc_fieldline = SurfaceClassifier(s_levelset, h=0.03, p=2)
 sc_fieldline.to_vtk(OUT_DIR + 'levelset', h=0.02)
 
-nfieldlines = 30
+nfieldlines = 20
 degree = 4
-tmax_fl = 400000
+tmax_fl = 400
 
 stellsym = True
 
 def trace_fieldlines(bfield, label):
     t1 = time.time()
-    R0 = np.linspace(ma.gamma()[0, 0], ma.gamma()[0, 0] + 0.14, nfieldlines)
+    R0 = np.linspace(ma.gamma()[0, 0], ma.gamma()[0, 0] + 0.05, nfieldlines)
     Z0 = [ma.gamma()[0, 2] for i in range(nfieldlines)]
     phis = [(i/4)*(2*np.pi/nfp) for i in range(4)]
     fieldlines_tys, fieldlines_phi_hits = compute_fieldlines(
@@ -197,7 +202,7 @@ def trace_fieldlines(bfield, label):
 
 # Bounds for the interpolated magnetic field chosen so that the surface is
 # entirely contained in it
-n = 20
+n = 15
 rs = np.linalg.norm(s.gamma()[:, :, 0:2], axis=2)
 zs = s.gamma()[:, :, 2]
 rrange = (np.min(rs), np.max(rs), n)

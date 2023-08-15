@@ -2,12 +2,12 @@ import os
 from matplotlib import pyplot as plt
 from pathlib import Path
 import numpy as np
-from simsopt.geo import SurfaceRZFourier
+from simsopt.geo import SurfaceRZFourier, CurveRZFourier
 from simsopt.objectives import SquaredFlux
 from simsopt.field.magneticfieldclasses import DipoleField
 from simsopt.field.biotsavart import BiotSavart
 from simsopt.geo import PermanentMagnetGrid
-from simsopt.field import compute_fieldlines, InterpolatedField, SurfaceClassifier
+from simsopt.field import compute_fieldlines, InterpolatedField, SurfaceClassifier, LevelsetStoppingCriterion
 import pickle
 import time
 from simsopt.util.permanent_magnet_helper_functions import *
@@ -33,7 +33,7 @@ surface_filename = TEST_DIR / input_name
 s = SurfaceRZFourier.from_wout(surface_filename, range="half period", nphi=nphi, ntheta=ntheta)
 
 vmec_final = Vmec(TEST_DIR / input_name)
-ntheta_VMEC = 200
+ntheta_VMEC = 100
 
 # Make higher resolution surface for plotting Bnormal
 qphi = 2 * nphi
@@ -135,10 +135,32 @@ print("Total fB = ",
 
 bs_final = b_dipole + bs
 
-#interpolating the magnetic field
+# Get the magnetic axis
 nfp = s.nfp
 stellsym = True
+mpol=5
+ntor=5
 
+raxis_cc = [0.455004988086597, 0.0440156683282455, 0.00272439261412522,
+   0.000172253586663152, 1.0252868811645e-05, 5.67166789928362e-07,
+   4.45152913520489e-08, 1.03095879617727e-08, 7.56214434436398e-10,
+   -1.92098079138534e-10,0]
+
+zaxis_cs = [-0, -0.0439018971482906, -0.00270493882880684,
+   -0.000172074499581258, -1.12324407227628e-05, -7.85113554306607e-07,
+   -6.18546981576889e-08, -1.15638995441075e-08, -3.24721336851853e-09,
+   -1.38710486183217e-08]
+
+Nt_ma=10
+ppp=10
+
+numpoints = Nt_ma*ppp+1 if ((Nt_ma*ppp) % 2 == 0) else Nt_ma*ppp
+ma = CurveRZFourier(numpoints, Nt_ma, nfp, True)
+ma.rc[:] = raxis_cc[0:(Nt_ma+1)]
+ma.zs[:] = zaxis_cs[0:Nt_ma]
+ma.x = ma.get_dofs()
+
+#interpolating the magnetic field
 n = 20
 rs = np.linalg.norm(s.gamma()[:, :, 0:2], axis=2)
 zs = s.gamma()[:, :, 2]
@@ -152,7 +174,12 @@ if stellsym:
 else:
     zrange = (-np.max(zs), np.max(zs), n)
 
-sc_fieldline = SurfaceClassifier(s, h=0.03, p=2)
+s_levelset = SurfaceRZFourier.from_nphi_ntheta(mpol=mpol, ntor=ntor, stellsym=stellsym, nfp=nfp,
+                                      range="full torus", nphi=64, ntheta=24)
+s_levelset.fit_to_curve(ma, 0.40, flip_theta=False)
+
+s_levelset.to_vtk(OUT_DIR + 'surface')
+sc_fieldline = SurfaceClassifier(s_levelset, h=0.03, p=2)
 sc_fieldline.to_vtk(OUT_DIR + 'levelset', h=0.02)
 
 def skip(rs, phis, zs):
@@ -177,6 +204,17 @@ bsh = InterpolatedField(
 )
 print('Done initializing InterpolatedField')
 
+# free up memory
+import gc
+del b_dipole
+del bs
+del bs_final
+del pm_opt
+del pol_vectors, pol_axes, pol_type
+del ophi
+del mag_data
+gc.collect()
+
 # Do Poincaré plots from here
 
 print("Obtaining VMEC final surfaces")
@@ -184,7 +222,7 @@ nfp = vmec_final.wout.nfp
 nzeta = 4
 nradius = 4
 nfieldlines = nradius
-zeta = np.linspace(0,2*np.pi/nfp,num=nzeta,endpoint=False)
+zeta = np.linspace(0,np.pi/nfp,num=nzeta,endpoint=False)
 theta = np.linspace(0,2*np.pi,num=ntheta_VMEC)
 iradii = np.linspace(0,vmec_final.wout.ns-1,num=nfieldlines).round()
 iradii = [int(i) for i in iradii]
@@ -202,14 +240,14 @@ Z0 = Z_final[0,:,0]
 
 print("Finished VMEC")
 from simsopt.field import particles_to_vtk
-tmax_fl= 1000
-tol_poincare=1e-14
+tmax_fl= 10000
+tol_poincare=1e-12
 def trace_fieldlines(bfield, R0, Z0):
     t1 = time.time()
     phis = [(i/4)*(2*np.pi/nfp) for i in range(4)]
     fieldlines_tys, fieldlines_phi_hits = compute_fieldlines(
         bfield, R0, Z0, tmax=tmax_fl, tol=tol_poincare, comm=comm,
-        phis=phis, stopping_criteria=[])
+        phis=phis, stopping_criteria=[LevelsetStoppingCriterion(sc_fieldline.dist)])
     t2 = time.time()
     print(f"Time for fieldline tracing={t2-t1:.3f}s. Num steps={sum([len(l) for l in fieldlines_tys])//nfieldlines}", flush=True)
     #particles_to_vtk(fieldlines_tys, f'fieldlines_optimized_coils')
