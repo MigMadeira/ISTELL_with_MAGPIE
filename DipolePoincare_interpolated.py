@@ -23,7 +23,7 @@ comm = MPI.COMM_WORLD
 comm = None
 nphi = 64 # need to set this to 64 for a real run
 ntheta = 64 # same as above
-input_name = 'wout_ISTTOK_final.nc'
+input_name = 'wout_ISTTOK_final_rescaled.nc'
 coordinate_flag = 'cartesian'
 
 
@@ -49,9 +49,9 @@ OUT_DIR = './Poincare_plots/interpolated/'
 os.makedirs(OUT_DIR, exist_ok=True)
 
 # Files for the desired initial coils, magnet grid and magnetizations:
-coilfile = "./ISTELL_with_spacing/PM4STELL/biot_savart_opt.json"
-famus_filename = "./grids/ISTELL_1cm_cubes_nodiagnostics_v3.focus"
-dipole_file = "./ISTELL_with_spacing/PM4STELL/result_m=39060.txt"
+coilfile = "./ISTELL_different_VV/biot_savart_opt.json"
+famus_filename = "./ISTELL_different_VV/SIMSOPT_dipole_solution.focus"
+dipole_file = "./ISTELL_different_VV/PM4STELL/best_result_m=42680.txtt"
 
 # Get the Biot Savart field from the coils:
 bs = load(coilfile)
@@ -141,17 +141,35 @@ stellsym = True
 mpol=5
 ntor=5
 
-raxis_cc = [0.455004988086597, 0.0440156683282455, 0.00272439261412522,
-   0.000172253586663152, 1.0252868811645e-05, 5.67166789928362e-07,
-   4.45152913520489e-08, 1.03095879617727e-08, 7.56214434436398e-10,
-   -1.92098079138534e-10,0]
+#ISTTOK FINAL
+#raxis_cc = [0.455004988086597, 0.0440156683282455, 0.00272439261412522,
+#   0.000172253586663152, 1.0252868811645e-05, 5.67166789928362e-07,
+#   4.45152913520489e-08, 1.03095879617727e-08, 7.56214434436398e-10,
+#   -1.92098079138534e-10,0]
+#
+#zaxis_cs = [-0, -0.0439018971482906, -0.00270493882880684,
+#   -0.000172074499581258, -1.12324407227628e-05, -7.85113554306607e-07,
+#   -6.18546981576889e-08, -1.15638995441075e-08, -3.24721336851853e-09,
+#   -1.38710486183217e-08]
 
-zaxis_cs = [-0, -0.0439018971482906, -0.00270493882880684,
-   -0.000172074499581258, -1.12324407227628e-05, -7.85113554306607e-07,
-   -6.18546981576889e-08, -1.15638995441075e-08, -3.24721336851853e-09,
-   -1.38710486183217e-08]
+#ISTTOK FINAL RESCALED
+raxis_cc = [0.512068942129585, 0.0495358453324253, 0.00306606934000414, 
+   0.000193856582130429, 1.15387211732875e-05, 6.3829739402027e-07, 
+   5.00981280200984e-08, 1.16025535180363e-08, 8.51054217343157e-10, 
+   -2.16189743109584e-10,0]
 
-Nt_ma=10
+zaxis_cs = [-0, -0.0494078056648933, -0.00304417577941522, 
+   -0.000193655035135303, -1.26411450119249e-05, -8.83577713235001e-07, 
+   -6.961213757255e-08, -1.30141734501413e-08, -3.65445904458639e-09, 
+   -1.56106710792667e-08]
+
+#ISTELL Final
+#raxis_cc = [0.457199931680793, -0.0368033294463952, 0.00179604736631461, 
+#   -9.0726797657931e-05,0]
+#   
+#zaxis_cs = [-0, 0.0366703670762128, -0.00183932352972319, 9.15643758218939e-05]
+ 
+Nt_ma=len(zaxis_cs)
 ppp=10
 
 numpoints = Nt_ma*ppp+1 if ((Nt_ma*ppp) % 2 == 0) else Nt_ma*ppp
@@ -301,5 +319,5 @@ for i in range(len(phis)):
 leg = fig.legend(loc='upper center', bbox_to_anchor=(0.5, 1.05), ncol=4, fontsize=12)
 plt.tight_layout()
 
-plt.savefig(OUT_DIR + f'poincare_ISTELL_PM4STELL_time={tmax_fl}_tol={tol_poincare}.pdf', bbox_inches = 'tight', pad_inches = 0)
-plt.savefig(OUT_DIR + f'poincare_ISTELL_PM4STELL_time={tmax_fl}_tol={tol_poincare}.png', bbox_inches = 'tight', pad_inches = 0)
+plt.savefig(OUT_DIR + f'poincare_ISTELL_different_VV_time={tmax_fl}_tol={tol_poincare}.pdf', bbox_inches = 'tight', pad_inches = 0)
+plt.savefig(OUT_DIR + f'poincare_ISTELL_different_VV_time={tmax_fl}_tol={tol_poincare}.png', bbox_inches = 'tight', pad_inches = 0)

@@ -179,15 +179,15 @@ s_levelset.to_vtk(OUT_DIR + 'surface')
 sc_fieldline = SurfaceClassifier(s_levelset, h=0.03, p=2)
 sc_fieldline.to_vtk(OUT_DIR + 'levelset', h=0.02)
 
-nfieldlines = 20
+nfieldlines = 22
 degree = 4
-tmax_fl = 400
+tmax_fl = 800
 
 stellsym = True
 
 def trace_fieldlines(bfield, label):
     t1 = time.time()
-    R0 = np.linspace(ma.gamma()[0, 0], ma.gamma()[0, 0] + 0.05, nfieldlines)
+    R0 = np.linspace(ma.gamma()[0, 0], ma.gamma()[0, 0] + 0.035, nfieldlines)
     Z0 = [ma.gamma()[0, 2] for i in range(nfieldlines)]
     phis = [(i/4)*(2*np.pi/nfp) for i in range(4)]
     fieldlines_tys, fieldlines_phi_hits = compute_fieldlines(
