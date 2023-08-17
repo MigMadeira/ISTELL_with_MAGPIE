@@ -23,7 +23,7 @@ ntheta = 64 # same as above
 surface_flag = 'wout'
 input_name = 'wout_ISTTOK_final.nc'
 coordinate_flag = 'cartesian'
-gap_trp = 0.0139
+gap_trp = 0.0159
 
 famus_filename = f'grids/Toroidal_space_study/ISTELL_1cm_cubes_gap_trp={gap_trp}.focus'
 
@@ -169,9 +169,9 @@ print('Number of available dipoles = ', pm_opt.ndipoles)
 # Set some hyperparameters for the optimization
 algorithm = 'ArbVec'  # Algorithm to use
 nAdjacent = 1  # How many magnets to consider "adjacent" to one another
-nHistory = 441 # How often to save the algorithm progress
+nHistory = 200 # How often to save the algorithm progress
 thresh_angle = np.pi # The angle between two "adjacent" dipoles such that they should be removed
-max_nMagnets = 52920
+max_nMagnets = 52000
 nBacktracking = 200
 kwargs = initialize_default_kwargs('GPMO')
 kwargs['K'] = 52920 # Maximum number of GPMO iterations to run
@@ -250,7 +250,7 @@ if save_plots:
     make_Bnormal_plots(bs, s_plot, OUT_DIR, "biot_savart_optimized")
 
     # Look through the solutions as function of K and make plots
-    for k in range(0, kwargs["nhistory"] + 1, 30):
+    for k in range(0, kwargs["nhistory"] + 1, 40):
         mk = m_history[:, :, k].reshape(pm_opt.ndipoles * 3)
         np.savetxt(OUT_DIR + 'result_m=' + str(int(max_nMagnets / (kwargs['nhistory']) * k)) + '.txt', m_history[:, :, k].reshape(pm_opt.ndipoles * 3))
         b_dipole = DipoleField(
