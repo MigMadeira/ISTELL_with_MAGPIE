@@ -179,10 +179,10 @@ ma.zs[:] = zaxis_cs[0:Nt_ma]
 ma.x = ma.get_dofs()
 
 #interpolating the magnetic field
-n = 20
+n = 40
 rs = np.linalg.norm(s.gamma()[:, :, 0:2], axis=2)
-zs = s.gamma()[:, :, 2]
-rrange = (np.min(rs), np.max(rs), n)
+zs = s.gamma()[:, :, 2]*1.1
+rrange = (np.min(rs)*0.9, 1.1*np.max(rs), n)
 phirange = (0, 2*np.pi/nfp, n*2)
 nfieldlines = 30
 degree = 4
@@ -212,7 +212,7 @@ def skip(rs, phis, zs):
     # cells that shouldn't be ignored
     rphiz = np.asarray([rs, phis, zs]).T.copy()
     dists = sc_fieldline.evaluate_rphiz(rphiz)
-    skip = list((dists < -0.05).flatten())
+    skip = list((dists < -0.3).flatten())
     print("Skip", sum(skip), "cells out of", len(skip), flush=True)
     return skip
 
