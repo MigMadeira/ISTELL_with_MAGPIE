@@ -51,7 +51,7 @@ os.makedirs(OUT_DIR, exist_ok=True)
 # Files for the desired initial coils, magnet grid and magnetizations:
 coilfile = "./ISTELL_different_VV/biot_savart_opt.json"
 famus_filename = "./ISTELL_different_VV/SIMSOPT_dipole_solution.focus"
-dipole_file = "./ISTELL_different_VV/PM4STELL/best_result_m=42680.txtt"
+dipole_file = "./ISTELL_different_VV/best_result_m=42680.txt"
 
 # Get the Biot Savart field from the coils:
 bs = load(coilfile)
