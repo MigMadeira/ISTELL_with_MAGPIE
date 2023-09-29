@@ -11,14 +11,14 @@ from mpi4py import MPI
 from simsopt.util import MpiPartition
 mpi = MpiPartition()
 
-_, _, _, R_final, Z_final = np.load("./Poincare_plots/Data/Poincare_data_2cm_no_diagnostics_no_quadrupole_fixed_I=72kA.npy", allow_pickle=True)
+_, _, _, R_final, Z_final = np.load("./Poincare_plots/Data/Poincare_data_tol=1e-14_t=10000_2cm_no_diagnostics_no_quadrupole_fixed_I=72kA.npy", allow_pickle=True)
 nfieldlines = 4
 
 filename = f'poincare_ISTELL_diag'
 OUT_DIR = "Poincare_plots/Figures/"
 os.makedirs(OUT_DIR, exist_ok=True)
 
-filelist = ["./Poincare_plots/Data/Poincare_data_2cm_no_diagnostics_no_quadrupole_fixed_I=72kA.npy",
+filelist = ["./Poincare_plots/Data/Poincare_data_tol=1e-14_t=10000_2cm_no_diagnostics_no_quadrupole_fixed_I=72kA.npy",
             "./Poincare_plots/Data/Poincare_data_tol=1e-14_t=10000_2cm_diag.npy",
             "./Poincare_plots/Data/Poincare_data_tol=1e-14_t=10000_2cm_diag_tol=1cm.npy",
             "./Poincare_plots/Data/Poincare_data_tol=1e-14_t=10000_2cm_diag_tol=2cm.npy",
@@ -68,13 +68,15 @@ for file in filelist:
         
         for j in range(nfieldlines):
             if j == 1:
-                for i in range(len(legend)):
-                    legend[i] = '_nolegend_'
+                for k in range(len(legend)):
+                    legend[k] = '_nolegend_'
             if counter == 0:
+                #print(i,j)
                 axs[row, col].plot(R_final[i,j,:], Z_final[i,j,:], '-', linewidth=1.2, c='k', label = legend[0])
             try: axs[row, col].scatter(r[i][j], z[i][j], marker=markerlist[counter+1], s=1.3, linewidths=1.3, c=colorlist[counter+1], label = legend[counter+1])
             except Exception as e: print(e, i, j)
             # if j == 0: axs[row, col].legend(loc="upper right")
+    counter+=1
 
 # plt.legend(bbox_to_anchor=(0.1, 0.9 ))
 leg = fig.legend(loc='upper center', bbox_to_anchor=(0.5, 1.05), ncol=4, fontsize=12)
