@@ -21,9 +21,13 @@ t_start = time.time()
 comm = None
 nphi = 64 # need to set this to 64 for a real run
 ntheta = 64 # same as above
-input_name = 'wout_ISTTOK_final_rescaled.nc'
+#nput_name = 'wout_ISTTOK_final_rescaled.nc'
+#input_name = 'wout_preciseQH_rescaled052_B0=0.5.nc'
+input_name = 'wout_ISTTOK_final_PHIEDGE=0.004823433820504875.nc'
 coordinate_flag = 'cartesian'
-famus_filename = 'grids/ISTELL_diff_VV/ISTELL_different_VV.focus'
+#famus_filename = 'grids/ISTELL_diff_VV/ISTELL_different_VV.focus'
+#famus_filename = 'grids/ISTELL_diff_VV/ISTELL_different_VV_preciseQH.focus'
+famus_filename = 'grids/ISTELL_diff_VV/ISTELL_different_VV_circular_1cm.focus'
 
 # Read in the plasma equilibrium file
 TEST_DIR = (Path(__file__).parent).resolve()
@@ -40,7 +44,7 @@ s_plot = SurfaceRZFourier.from_wout(
 )
 
 # Make the output directory
-OUT_DIR = 'ISTELL_different_VV/'
+OUT_DIR = 'ISTELL_different_VV_circular4/'
 os.makedirs(OUT_DIR, exist_ok=True)
 
 #setting radius for the circular coils
@@ -147,27 +151,41 @@ print('Number of available dipoles = ', pm_opt.ndipoles)
 
 pm_opt.m = np.zeros(pm_opt.ndipoles*3)
 b_dipole = DipoleField(pm_opt.dipole_grid_xyz, pm_opt.m,
-                       nfp=1, coordinate_flag=pm_opt.coordinate_flag, m_maxima=pm_opt.m_maxima,stellsym=False)
+                       nfp=s.nfp, coordinate_flag=pm_opt.coordinate_flag, m_maxima=pm_opt.m_maxima,stellsym=False)
 
 b_dipole._toVTK(OUT_DIR + "Dipole_Fields_K")
 
 #create the outside boundary for the PMs
-s_out = SurfaceRZFourier.from_wout(surface_filename, nphi = nphi, ntheta = ntheta, range='half period')
-s_out.extend_via_normal(0.01)
-s_out.to_vtk(OUT_DIR + "surf_out")
+if 'circular' not in famus_filename:
+    s_out = SurfaceRZFourier.from_wout(surface_filename, nphi = nphi, ntheta = ntheta, range='half period')
+    s_out.extend_via_normal(0.01)
+    s_out.to_vtk(OUT_DIR + "surf_out")
 
-pm_opt.remove_magnets_inside_surface(s_out)
+    pm_opt.remove_magnets_inside_surface(s_out)
 
 # remove any dipoles where the diagnostic ports should be
-cylinder_list = [sopp.Cylinder(0.52+0.015, 0.06, 2*np.pi/12, np.pi/2, 0.21, 0.0575, 2*np.pi/12, 0),
-                 sopp.Cylinder(0.52, 0.03, 2*np.pi/12, np.pi/9, 0.21, 0.035, 2*np.pi/12, np.pi/2),
-                 sopp.Cylinder(0.52+0.035, 0.03, 2*np.pi/12, 3*np.pi/2, 0.21, 0.035, 2*np.pi/12, np.pi),
-                 sopp.Cylinder(0.52-0.035, 0.03, 4*np.pi/12, np.pi/2, 0.21, 0.035, 4*np.pi/12, 0),
-                 sopp.Cylinder(0.52, 0.03, 4*np.pi/12, 6*np.pi/18 + 1*np.pi/32, 0.21, 0.0575, 4*np.pi/12, np.pi/2)]
+if s.nfp == 2:
+    if 'circular' in famus_filename:
+        cylinder_list = [sopp.Cylinder(0.52, 0.11, 2*np.pi/12, np.pi/2, 0.21, 0.0575, 2*np.pi/12, 0),
+                        sopp.Cylinder(0.52, 0.11, 2*np.pi/12, 0, 0.21, 0.035, 2*np.pi/12, np.pi/2),
+                        sopp.Cylinder(0.52, 0.11, 2*np.pi/12, 3*np.pi/2, 0.21, 0.035, 2*np.pi/12, np.pi),
+                        sopp.Cylinder(0.52, 0.11, 4*np.pi/12, np.pi/2, 0.21, 0.035, 4*np.pi/12, 0),
+                        sopp.Cylinder(0.52, 0.11, 4*np.pi/12, 0, 0.21, 0.0575, 4*np.pi/12, np.pi/2)]
+    else:
+        cylinder_list = [sopp.Cylinder(0.52+0.015, 0.06, 2*np.pi/12, np.pi/2, 0.21, 0.0575, 2*np.pi/12, 0),
+                 	sopp.Cylinder(0.52, 0.03, 2*np.pi/12, np.pi/9, 0.21, 0.035, 2*np.pi/12, np.pi/2),
+                 	sopp.Cylinder(0.52+0.035, 0.03, 2*np.pi/12, 3*np.pi/2, 0.21, 0.035, 2*np.pi/12, np.pi),
+                 	sopp.Cylinder(0.52-0.035, 0.03, 4*np.pi/12, np.pi/2, 0.21, 0.035, 4*np.pi/12, 0),
+                 	sopp.Cylinder(0.52, 0.03, 4*np.pi/12, 6*np.pi/18 + 1*np.pi/32, 0.21, 0.0575, 4*np.pi/12, np.pi/2)]
+else:
+	cylinder_list = [sopp.Cylinder(0.52, 0.1, 2*np.pi/24, 3*np.pi/2+2*np.pi/16, 0.3, 0.0575, 2*np.pi/24, 0),
+	         	sopp.Cylinder(0.52+0.01, 0.11, 2*np.pi/24, 2*np.pi - 6.8*np.pi/16, 0.21, 0.035, 2*np.pi/24, np.pi/2),
+        	 	sopp.Cylinder(0.52+0.06, 0.12, 2*np.pi/24, 3*np.pi/2 - 1.5*np.pi/16 , 0.21, 0.035, 2*np.pi/24, np.pi)]
+
 pm_opt.remove_dipoles_inside_shapes(cylinder_list)
 
 b_dipole = DipoleField(pm_opt.dipole_grid_xyz, pm_opt.m,
-                       nfp=2, coordinate_flag=pm_opt.coordinate_flag, m_maxima=pm_opt.m_maxima,stellsym=True)
+                       nfp=s.nfp, coordinate_flag=pm_opt.coordinate_flag, m_maxima=pm_opt.m_maxima,stellsym=True)
 
 b_dipole._toVTK(OUT_DIR + "Dipole_Fields_K_after_cylinder_removal")
 
@@ -180,10 +198,10 @@ pm_opt.write_to_famus(Path(OUT_DIR))
 
 # Set some hyperparameters for the optimization
 algorithm = 'ArbVec'  # Algorithm to use
-nAdjacent = 1  # How many magnets to consider "adjacent" to one another
+nAdjacent = 10  # How many magnets to consider "adjacent" to one another
 nHistory = 400 # How often to save the algorithm progress
-thresh_angle = np.pi # The angle between two "adjacent" dipoles such that they should be removed
-max_nMagnets = 44000
+thresh_angle = 7*np.pi/9 # The angle between two "adjacent" dipoles such that they should be removed
+max_nMagnets = 27600 #22800 #44000
 nBacktracking = 200
 kwargs = initialize_default_kwargs('GPMO')
 kwargs['K'] = max_nMagnets # Maximum number of GPMO iterations to run
@@ -262,7 +280,7 @@ if save_plots:
     make_Bnormal_plots(bs, s_plot, OUT_DIR, "biot_savart_optimized")
 
     # Look through the solutions as function of K and make plots
-    for k in range(0, kwargs["nhistory"] + 1, 11):
+    for k in range(0, kwargs["nhistory"] + 1, 40):
         mk = m_history[:, :, k].reshape(pm_opt.ndipoles * 3)
         np.savetxt(OUT_DIR + 'result_m=' + str(int(max_nMagnets / (kwargs['nhistory']) * k)) + '.txt', m_history[:, :, k].reshape(pm_opt.ndipoles * 3))
         b_dipole = DipoleField(
