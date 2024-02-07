@@ -24,9 +24,9 @@ ntheta = 64  # same as above
 Plot = False
 
 input_name = 'wout_ISTELL_final.nc'
+#input_name = "wout_W7-X_standard_configuration_rescaled_PHIEDGE=-0.004573988888888889.nc"
 coordinate_flag = 'cartesian'
 famus_filename = 'grids/ISTELL_aligned_axis/ISTELL_aligned_full_2cm.focus'
-
 
 # Read in the plasma equilibrium file
 TEST_DIR = Path(__file__).parent
@@ -43,7 +43,8 @@ s_plot = SurfaceRZFourier.from_wout(
 )
 
 # Make the output directory
-OUT_DIR = 'ISTELL_aligned_axis/with_diagnostics/'
+OUT_DIR = 'ISTELL_aligned_axis/2cm_diag_tol_1cm/'
+#OUT_DIR = 'ISTELL_aligned_axis/W7-X_2cm/' 
 os.makedirs(OUT_DIR, exist_ok=True)
 
 #setting radius for the circular coils
@@ -54,6 +55,7 @@ order = 2
 # Number of unique coil shapes, i.e. the number of coils per half field period:
 # (Since the configuration has nfp = 5, multiply by 2*ncoils to get the total number of coils.)
 ncoils = int(16/(2*s.nfp))
+#ncoils = 16
 
 # Major radius for the initial circular coils:
 R0 = vmec.wout.Rmajor_p
@@ -65,6 +67,9 @@ R1 = 0.2025
 base_curves = create_equally_spaced_curves(ncoils, s.nfp, stellsym=True, R0=R0, R1=R1, order=order, numquadpoints=128)
 base_currents = [Current(1.0) * 72e3 for i in range(ncoils)]
 coils = coils_via_symmetries(base_curves, base_currents, s.nfp, True)
+#base_curves = create_equally_spaced_curves(ncoils, 1, stellsym=False, R0=R0, R1=R1, order=order, numquadpoints=128)
+#base_currents = [Current(1.0) * 72e3 for i in range(ncoils)]
+#coils = coils_via_symmetries(base_curves, base_currents, 1, False)
 
 # fix all the coil shapes so only the currents are optimized
 for i in range(ncoils):
@@ -149,6 +154,8 @@ pol_vectors[:, :, 1] = mag_data.pol_y
 pol_vectors[:, :, 2] = mag_data.pol_z
 print('pol_vectors_shape = ', pol_vectors.shape)
 
+s.nfp = 1
+s.stellsym = False
 # Finally, initialize the permanent magnet class
 pm_opt = PermanentMagnetGrid.geo_setup_from_famus(s, Bnormal, famus_filename, pol_vectors=pol_vectors) 
 
@@ -167,7 +174,7 @@ cylinder_list = []
 
 for i in range(len(diagnostic_data["h_port"])):
     cylinder_list.append(sopp.Cylinder(0.46, 0.094, diagnostic_data["tor"][i], diagnostic_data["pol"][i], 
-                                       diagnostic_data["h_total"][i], diagnostic_data["Outer_r"][i], 
+                                       diagnostic_data["h_total"][i] + 0.01, diagnostic_data["Outer_r"][i] + 0.01, 
                                        diagnostic_data["theta"][i], diagnostic_data["phi"][i]))
 
 if Plot:
@@ -185,13 +192,13 @@ b_dipole._toVTK(OUT_DIR + "Dipole_Fields_K_after_diagnostic_removal")
 
 # Set some hyperparameters for the optimization
 algorithm = 'ArbVec'  # Algorithm to use
-nAdjacent = 1  # How many magnets to consider "adjacent" to one another
-nHistory = 340 # How often to save the algorithm progress
-thresh_angle = np.pi # The angle between two "adjacent" dipoles such that they should be removed
-max_nMagnets = 10200
+nAdjacent = 6  # How many magnets to consider "adjacent" to one another
+nHistory = 100 # How often to save the algorithm progress
+thresh_angle = 15*np.pi/18 # The angle between two "adjacent" dipoles such that they should be removed
+max_nMagnets = 10400
 nBacktracking = 200
 kwargs = initialize_default_kwargs('GPMO')
-kwargs['K'] = max_nMagnets # Maximum number of GPMO iterations to run
+kwargs['K'] = 10000 #10400 for baseline 39000 for backtracking # Maximum number of GPMO iterations to run
 kwargs['nhistory'] = nHistory
 if algorithm == 'backtracking' or algorithm == 'ArbVec_backtracking':
     kwargs['backtracking'] = nBacktracking  # How often to perform the backtrackinig
@@ -258,7 +265,7 @@ if save_plots:
     )
     mu0 = 4 * np.pi * 1e-7
     Bmax = 1.465
-    vol_eff = np.sum(np.sqrt(np.sum(m_history ** 2, axis=1)), axis=0) * mu0 * 2 * s.nfp / Bmax
+    vol_eff = np.sum(np.sqrt(np.sum(m_history ** 2, axis=1)), axis=0) * mu0 / Bmax
     np.savetxt(OUT_DIR + 'eff_vol_history_K' + str(max_nMagnets) + '_nphi' + str(nphi) + '_ntheta' + str(ntheta) + '.txt', vol_eff)
     
     # Plot the SIMSOPT GPMO solution
@@ -267,9 +274,11 @@ if save_plots:
     make_Bnormal_plots(bs, s_plot, OUT_DIR, "biot_savart_optimized")
 
     # Look through the solutions as function of K and make plots
-    for k in range(0, kwargs["nhistory"] + 1, 20):
+    for k in range(0, kwargs["nhistory"] + 1, 10):
         mk = m_history[:, :, k].reshape(pm_opt.ndipoles * 3)
-        np.savetxt(OUT_DIR + 'result_m=' + str(int(max_nMagnets / (kwargs['nhistory']) * k)) + '.txt', m_history[:, :, k].reshape(pm_opt.ndipoles * 3))
+        m  = mk.reshape(pm_opt.ndipoles,3)
+        K_save = str(len(m[np.sum(m ** 2, axis=-1) != 0]))
+        np.savetxt(OUT_DIR + f'result_m={K_save}.txt', m_history[:, :, k].reshape(pm_opt.ndipoles * 3))
         b_dipole = DipoleField(
             pm_opt.dipole_grid_xyz,
             mk, 
@@ -279,7 +288,7 @@ if save_plots:
 	    stellsym=False
         )
         b_dipole.set_points(s_plot.gamma().reshape((-1, 3)))
-        K_save = int(max_nMagnets/ kwargs['nhistory'] * k)
+        #K_save = int(max_nMagnets/ kwargs['nhistory'] * k)
         b_dipole._toVTK(OUT_DIR + f"Dipole_Fields_K{K_save}_nphi{nphi}_ntheta{ntheta}")
         print("Total fB = ", 0.5 * np.sum((pm_opt.A_obj @ mk - pm_opt.b_obj) ** 2))
         Bnormal_dipoles = np.sum(b_dipole.B().reshape((qphi, ntheta, 3)) * s_plot.unitnormal(), axis=-1)
@@ -315,6 +324,6 @@ bs.set_points(s_plot.gamma().reshape((-1, 3)))
 Bnormal = np.sum(bs.B().reshape((qphi, ntheta, 3)) * s_plot.unitnormal(), axis=2)
 f_B_sf = SquaredFlux(s_plot, b_dipole, -Bnormal).J()
 print('f_B = ', f_B_sf)
-total_volume = np.sum(np.sqrt(np.sum(pm_opt.m.reshape(pm_opt.ndipoles, 3) ** 2, axis=-1))) * s.nfp * 2 * mu0 / B_max
+total_volume = np.sum(np.sqrt(np.sum(pm_opt.m.reshape(pm_opt.ndipoles, 3) ** 2, axis=-1))) * mu0 / B_max
 print('Total volume = ', total_volume)
 
